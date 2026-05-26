@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import KimlikFoto from '../components/KimlikFoto';
@@ -48,6 +48,23 @@ export default function FormScreen({ navigation, route }: any) {
   const kefilVar = formData.kefil_var === 'Evet';
   const kefilSayisi = parseInt(formData.kefil_sayisi || '1');
 
+  const onFotoKirayanSecildi = useCallback(
+    (on: string, arka: string) => setFotograflar(prev => ({ ...prev, kirayanOn: on, kirayanArka: arka })),
+    []
+  );
+  const onFotoKiraciSecildi = useCallback(
+    (on: string, arka: string) => setFotograflar(prev => ({ ...prev, kiraciOn: on, kiraciArka: arka })),
+    []
+  );
+  const onFotoKefil1Secildi = useCallback(
+    (on: string, arka: string) => setFotograflar(prev => ({ ...prev, kefil1On: on, kefil1Arka: arka })),
+    []
+  );
+  const onFotoKefil2Secildi = useCallback(
+    (on: string, arka: string) => setFotograflar(prev => ({ ...prev, kefil2On: on, kefil2Arka: arka })),
+    []
+  );
+
   const handleGenerate = async () => {
     setLoading(true);
     try {
@@ -84,7 +101,7 @@ export default function FormScreen({ navigation, route }: any) {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { paddingBottom: insets.bottom }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -384,22 +401,22 @@ export default function FormScreen({ navigation, route }: any) {
           <Text style={styles.sectionTitle}>KİMLİK FOTOĞRAFLARI</Text>
           <KimlikFoto
             label="Kiraya Veren Kimlik"
-            onFotoSecildi={(on, arka) => setFotograflar(prev => ({ ...prev, kirayanOn: on, kirayanArka: arka }))}
+            onFotoSecildi={onFotoKirayanSecildi}
           />
           <KimlikFoto
             label="Kiracı Kimlik"
-            onFotoSecildi={(on, arka) => setFotograflar(prev => ({ ...prev, kiraciOn: on, kiraciArka: arka }))}
+            onFotoSecildi={onFotoKiraciSecildi}
           />
           {kefilVar && kefilSayisi >= 1 && (
             <KimlikFoto
               label="1. Kefil Kimlik"
-              onFotoSecildi={(on, arka) => setFotograflar(prev => ({ ...prev, kefil1On: on, kefil1Arka: arka }))}
+              onFotoSecildi={onFotoKefil1Secildi}
             />
           )}
           {kefilVar && kefilSayisi >= 2 && (
             <KimlikFoto
               label="2. Kefil Kimlik"
-              onFotoSecildi={(on, arka) => setFotograflar(prev => ({ ...prev, kefil2On: on, kefil2Arka: arka }))}
+              onFotoSecildi={onFotoKefil2Secildi}
             />
           )}
         </View>

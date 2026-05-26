@@ -114,7 +114,7 @@ export default function PreviewScreen({ navigation, route }: any) {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { paddingBottom: insets.bottom }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -129,14 +129,14 @@ export default function PreviewScreen({ navigation, route }: any) {
         </View>
         <View style={styles.chatBox}>
           <Text style={styles.chatLabel}>SÖZLEŞMEYI DÜZENLE</Text>
-          <ScrollView style={styles.chatMessages} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
+          <View style={styles.chatMessages}>
             {messages.map((msg, i) => (
               <View key={i} style={[styles.chatMsg, msg.role === 'user' ? styles.userMsg : styles.aiMsg]}>
                 <Text style={[styles.chatMsgText, msg.role === 'user' && { color: '#fff' }]}>{msg.text}</Text>
               </View>
             ))}
             {loading && <ActivityIndicator style={{ margin: 8 }} color="#1a2e1a" />}
-          </ScrollView>
+          </View>
           <View style={styles.chatInputRow}>
             <TextInput
               style={styles.chatInput}
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   contractText: { fontSize: 13, lineHeight: 22, color: '#333' },
   chatBox: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: '#e0e0e0', overflow: 'hidden' },
   chatLabel: { fontSize: 11, letterSpacing: 1.5, color: '#888', fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  chatMessages: { padding: 10, maxHeight: 160 },
+  chatMessages: { padding: 10, maxHeight: 160, overflow: 'hidden' },
   chatMsg: { borderRadius: 10, padding: 10, marginBottom: 6, maxWidth: '85%' },
   aiMsg: { backgroundColor: '#f5f5f0', alignSelf: 'flex-start' },
   userMsg: { backgroundColor: '#1a2e1a', alignSelf: 'flex-end' },
