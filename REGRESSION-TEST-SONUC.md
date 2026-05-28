@@ -117,6 +117,7 @@ Her faz tamamlandıktan sonra bu test tekrarlanmalı:
 | Tarih | Faz | Commit | A | B | C | D | E | F | Not |
 |-------|-----|--------|---|---|---|---|---|---|-----|
 | 26.05.2026 | v1.0-pre-saas | ab51e47 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Baseline test — tüm özellikler %100 çalışıyor |
+| 28.05.2026 | Faz 1.3 SupabaseStorageService | 19c74e4 | — | ✅ | — | ✅ | — | ✅ | SupabaseStorageService devreye girdi (USE_CLOUD_STORAGE flag); RLS policy'leri Faz 1 için anon+authenticated açık (Faz 2'de organization_id ile sıkılaşacak); initSampleData kapatıldı; focus storage migration'daydı |
 
 > Sonraki faz testlerinde bu tabloya satır eklenecek. Tek satırda tüm özellik grupları görünür olacak.
 
