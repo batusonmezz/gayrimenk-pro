@@ -12,11 +12,9 @@ const CONTRACT_TYPES = [
 
 export default function HomeScreen({ navigation }: any) {
   useEffect(() => {
-    console.log('initSampleData çağrılıyor...');
-    initSampleData().then(() => {
-      console.log('initSampleData tamamlandı');
-      sozlesmeleriGetir().then(data => console.log('Kayıt sayısı:', data.length));
-    });
+    // DEV ONLY - Faz 0 boyunca örnek veri oluşturuyordu
+    // Faz 1.3'te disabled — gerçek kullanıcı verisi ile çalışıyoruz
+    // initSampleData();
   }, []);
 
   return (
