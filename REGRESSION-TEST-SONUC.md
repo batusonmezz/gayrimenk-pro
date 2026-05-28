@@ -118,6 +118,7 @@ Her faz tamamlandıktan sonra bu test tekrarlanmalı:
 |-------|-----|--------|---|---|---|---|---|---|-----|
 | 26.05.2026 | v1.0-pre-saas | ab51e47 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Baseline test — tüm özellikler %100 çalışıyor |
 | 28.05.2026 | Faz 1.3 SupabaseStorageService | 19c74e4 | — | ✅ | — | ✅ | — | ✅ | SupabaseStorageService devreye girdi (USE_CLOUD_STORAGE flag); RLS policy'leri Faz 1 için anon+authenticated açık (Faz 2'de organization_id ile sıkılaşacak); initSampleData kapatıldı; focus storage migration'daydı |
+| 28.05.2026 | Faz 1.4 Offline-first fallback | 2a8f6cc | — | ✅ | — | ✅ | ✅ | ✅ | HybridStorageService devrede (USE_CLOUD_STORAGE=true ise); AI fallback: Edge Function fail → direct Anthropic API; Storage fallback: Supabase fail → LocalStorage; Default USE_CLOUD_STORAGE=false, behavior değişmedi; Test: .env'de Supabase URL geçersiz yapılarak simüle edildi; TODO Faz 2: UI feedback + sync mekanizması |
 
 > Sonraki faz testlerinde bu tabloya satır eklenecek. Tek satırda tüm özellik grupları görünür olacak.
 
