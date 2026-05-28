@@ -4,32 +4,10 @@ import { USE_REMOTE_AI } from '../config/features';
 const PROXY_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/anthropic-proxy`;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Fallback: doğrudan Anthropic API (USE_REMOTE_AI=false ise — acil rollback)
 const DIRECT_API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || '';
 const DIRECT_API_URL = 'https://api.anthropic.com/v1/messages';
 
-async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
-  if (USE_REMOTE_AI) {
-    console.log('[anthropic] Edge Function proxy üzerinden çağrılıyor');
-    const response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ systemPrompt, userMessage }),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: response.statusText }));
-      console.error('[anthropic] Proxy hata:', err);
-      throw new Error(err.error ?? 'Proxy hatası');
-    }
-    const data = await response.json();
-    return data.content ?? 'Hata oluştu.';
-  }
-
-  // USE_REMOTE_AI = false — direkt Anthropic API (rollback modu)
-  console.log('[anthropic] Direkt API modu (rollback)');
+async function callDirectApi(systemPrompt: string, userMessage: string): Promise<string> {
   const response = await fetch(DIRECT_API_URL, {
     method: 'POST',
     headers: {
@@ -46,8 +24,41 @@ async function callClaude(systemPrompt: string, userMessage: string): Promise<st
     }),
   });
   const data = await response.json();
-  console.log('[anthropic] Direkt API yanıt:', JSON.stringify(data));
+  console.log('[anthropic] Direkt API yanıt:', JSON.stringify(data).substring(0, 120));
   return data.content?.[0]?.text || 'Hata oluştu.';
+}
+
+async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
+  if (USE_REMOTE_AI) {
+    try {
+      console.log('[anthropic] Edge Function proxy üzerinden çağrılıyor');
+      const response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ systemPrompt, userMessage }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(err.error ?? `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      return data.content ?? 'Hata oluştu.';
+    } catch (e) {
+      console.warn('[anthropic] Edge Function başarısız, fallback deneniyor:', e);
+      if (DIRECT_API_KEY) {
+        console.log('[anthropic] Direkt API fallback aktif');
+        return callDirectApi(systemPrompt, userMessage);
+      }
+      throw new Error('AI servisine erişilemiyor. İnternet bağlantınızı kontrol edin.');
+    }
+  }
+
+  // USE_REMOTE_AI = false — direkt API (acil rollback modu)
+  console.log('[anthropic] Direkt API modu (rollback)');
+  return callDirectApi(systemPrompt, userMessage);
 }
 
 export async function sozlesmeOlustur(tur: string, formData: Record<string, string>): Promise<string> {

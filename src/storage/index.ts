@@ -1,12 +1,12 @@
 import { USE_CLOUD_STORAGE } from '../config/features';
 import { LocalStorageService } from './LocalStorageService';
-import { SupabaseStorageService } from './SupabaseStorageService';
+import { HybridStorageService } from './HybridStorageService';
 
 export type { SozlesmeKayit } from './types';
 export type { IStorageService } from './IStorageService';
 
 const _storage = USE_CLOUD_STORAGE
-  ? new SupabaseStorageService()
+  ? new HybridStorageService()
   : new LocalStorageService();
 
 export const sozlesmeKaydet = _storage.sozlesmeKaydet.bind(_storage);
