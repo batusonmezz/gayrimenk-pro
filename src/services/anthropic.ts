@@ -1,33 +1,53 @@
 import { SOZLESME_YAZARI_PROMPT, HUKUK_ARASTIRMACI_PROMPT, MADDE_DUZENLEYICI_PROMPT } from '../constants/prompts';
+import { USE_REMOTE_AI } from '../config/features';
 
-const API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || '';
-const API_URL = 'https://api.anthropic.com/v1/messages';
+const PROXY_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/anthropic-proxy`;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Fallback: doğrudan Anthropic API (USE_REMOTE_AI=false ise — acil rollback)
+const DIRECT_API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || '';
+const DIRECT_API_URL = 'https://api.anthropic.com/v1/messages';
 
 async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
-  console.log('API KEY:', API_KEY ? 'VAR - ' + API_KEY.substring(0, 10) : 'YOK');
-  try {
-    const response = await fetch(API_URL, {
+  if (USE_REMOTE_AI) {
+    console.log('[anthropic] Edge Function proxy üzerinden çağrılıyor');
+    const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
+      body: JSON.stringify({ systemPrompt, userMessage }),
     });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: response.statusText }));
+      console.error('[anthropic] Proxy hata:', err);
+      throw new Error(err.error ?? 'Proxy hatası');
+    }
     const data = await response.json();
-    console.log('API RESPONSE:', JSON.stringify(data));
-    return data.content?.[0]?.text || 'Hata oluştu.';
-  } catch(e) {
-    console.log('HATA:', e);
-    throw e;
+    return data.content ?? 'Hata oluştu.';
   }
+
+  // USE_REMOTE_AI = false — direkt Anthropic API (rollback modu)
+  console.log('[anthropic] Direkt API modu (rollback)');
+  const response = await fetch(DIRECT_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': DIRECT_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  });
+  const data = await response.json();
+  console.log('[anthropic] Direkt API yanıt:', JSON.stringify(data));
+  return data.content?.[0]?.text || 'Hata oluştu.';
 }
 
 export async function sozlesmeOlustur(tur: string, formData: Record<string, string>): Promise<string> {
@@ -76,7 +96,7 @@ KULLANICI İSTEĞİ: ${istek}
     if (Array.isArray(parsed)) return parsed;
     return maddeler;
   } catch {
-    console.log('Parse hatası:', yanit);
+    console.log('[anthropic] maddeleriDuzenle parse hatası:', yanit);
     return maddeler;
   }
 }
