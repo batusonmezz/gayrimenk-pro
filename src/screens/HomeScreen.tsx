@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import { initSampleData } from '../utils/initSampleData';
 import { sozlesmeleriGetir } from '../services/storage';
+import { signOut } from '../services/auth';
 
 const CONTRACT_TYPES = [
   { id: 'kira', title: 'Kira Sözleşmesi', desc: 'Konut ve işyeri kiralamalar', icon: '🏠', enabled: true },
@@ -17,11 +18,24 @@ export default function HomeScreen({ navigation }: any) {
     // initSampleData();
   }, []);
 
+  const handleCikis = async () => {
+    try {
+      await signOut();
+    } catch {
+      // App.tsx listener yine de Login'e atar
+    }
+  };
+
   return (
     <View style={[styles.container, {height: '100%' as any, flex: 1}]}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.brand}>GAYRİMENK PRO</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.brand}>GAYRİMENK PRO</Text>
+          <TouchableOpacity onPress={handleCikis} style={styles.cikisBtn}>
+            <Text style={styles.cikisText}>Çıkış</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.title}>Sözleşmeler</Text>
       </View>
       <ScrollView style={{flex: 1, padding: 16}} contentContainerStyle={{paddingBottom: 80}} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
@@ -116,4 +130,7 @@ const styles = StyleSheet.create({
   researchDesc: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
   badge: { backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   badgeText: { color: '#9fe1cb', fontSize: 10 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cikisBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+  cikisText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
 });
