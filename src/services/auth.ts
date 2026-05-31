@@ -1,4 +1,5 @@
 import { supabase } from '../storage/supabaseClient';
+import { setOrganizationId } from './authState';
 import type { User } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -46,6 +47,7 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   const needsEmailConfirmation = authData.session === null;
   console.log('[auth] signUp başarılı, needsEmailConfirmation:', needsEmailConfirmation);
 
+  setOrganizationId(org.id);
   return { user: authData.user, organizationId: org.id, needsEmailConfirmation };
 }
 
@@ -60,12 +62,15 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
     .eq('id', data.user.id)
     .single();
 
-  return { user: data.user, organizationId: userRecord?.organization_id ?? null };
+  const orgId = userRecord?.organization_id ?? null;
+  setOrganizationId(orgId);
+  return { user: data.user, organizationId: orgId };
 }
 
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+  setOrganizationId(null);
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {

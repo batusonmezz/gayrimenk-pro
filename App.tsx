@@ -6,6 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
+import * as auth from './src/services/auth';
+import { setOrganizationId } from './src/services/authState';
 import HomeScreen from './src/screens/HomeScreen';
 import FormScreen from './src/screens/FormScreen';
 import PreviewScreen from './src/screens/PreviewScreen';
@@ -33,8 +35,14 @@ export default function App() {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
+      if (event === 'INITIAL_SESSION' && session) {
+        const user = await auth.getCurrentUser();
+        setOrganizationId(user?.organizationId ?? null);
+      } else if (event === 'SIGNED_OUT') {
+        setOrganizationId(null);
+      }
     });
 
     return () => subscription.unsubscribe();

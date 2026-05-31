@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { getOrganizationId } from '../services/authState';
 import type { IStorageService } from './IStorageService';
 import type { SozlesmeKayit } from './types';
 
@@ -20,6 +21,8 @@ function parseKurus(aylik_kira: string): number {
 export class SupabaseStorageService implements IStorageService {
   async sozlesmeKaydet(kayit: Omit<SozlesmeKayit, 'id' | 'tarih'>): Promise<string> {
     const tarih = new Date().toLocaleDateString('tr-TR');
+    const organizationId = getOrganizationId();
+    if (!organizationId) throw new Error('Oturum bilgisi eksik, lütfen tekrar giriş yapın.');
 
     const { data: contract, error: contractError } = await supabase
       .from('contracts')
@@ -33,6 +36,7 @@ export class SupabaseStorageService implements IStorageService {
         sozlesme_metni: kayit.sozlesmeMetni,
         ozel_maddeler: kayit.ozelMaddeler ?? [],
         genel_maddeler: kayit.genelMaddeler ?? [],
+        organization_id: organizationId,
       })
       .select('id')
       .single();
