@@ -25,30 +25,25 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   if (authError) throw new Error(authHataMesaji(authError.message));
   if (!authData.user) throw new Error('Kayıt tamamlanamadı.');
 
-  const orgName = email.split('@')[0] || 'Yeni Organizasyon';
-
-  const { data: org, error: orgError } = await supabase
-    .from('organizations')
-    .insert({ name: orgName })
-    .select('id')
-    .single();
-
-  if (orgError) throw new Error('Organizasyon oluşturulamadı. Lütfen tekrar deneyin.');
-
-  const { error: userError } = await supabase
-    .from('users')
-    .insert({ id: authData.user.id, organization_id: org.id });
-
-  if (userError) {
-    await supabase.from('organizations').delete().eq('id', org.id);
-    throw new Error('Kullanıcı kaydı tamamlanamadı. Lütfen tekrar deneyin.');
+  if (authData.session === null) {
+    return { user: authData.user, organizationId: null, needsEmailConfirmation: true };
   }
 
-  const needsEmailConfirmation = authData.session === null;
-  console.log('[auth] signUp başarılı, needsEmailConfirmation:', needsEmailConfirmation);
+  const { data: userRecord, error: userFetchError } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', authData.user.id)
+    .single();
 
-  setOrganizationId(org.id);
-  return { user: authData.user, organizationId: org.id, needsEmailConfirmation };
+  if (userFetchError || !userRecord?.organization_id) {
+    throw new Error('Kullanıcı kaydı hazırlanamadı. Lütfen tekrar deneyin.');
+  }
+
+  const orgId = userRecord.organization_id;
+  console.log('[auth] signUp başarılı, org_id:', orgId);
+
+  setOrganizationId(orgId);
+  return { user: authData.user, organizationId: orgId, needsEmailConfirmation: false };
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
