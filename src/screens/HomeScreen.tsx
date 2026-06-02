@@ -1,8 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
-import { initSampleData } from '../utils/initSampleData';
-import { sozlesmeleriGetir } from '../services/storage';
-import { signOut } from '../services/auth';
+import { signOut, getCurrentUser } from '../services/auth';
+import { getRole, getEmail } from '../services/authState';
 
 const CONTRACT_TYPES = [
   { id: 'kira', title: 'Kira Sözleşmesi', desc: 'Konut ve işyeri kiralamalar', icon: '🏠', enabled: true },
@@ -11,11 +10,29 @@ const CONTRACT_TYPES = [
   { id: 'vekaletname', title: 'Vekaletname', desc: 'Temsil ve yetki belgeleri', icon: '📜', enabled: false },
 ];
 
+function roleTurkce(role: string | null): string {
+  if (role === 'mal_sahibi') return 'Mal Sahibi';
+  if (role === 'kiraci') return 'Kiracı';
+  return 'Emlakçı';
+}
+
 export default function HomeScreen({ navigation }: any) {
+  const [email, setEmailState] = useState<string | null>(null);
+  const [role, setRoleState] = useState<string | null>(null);
+
   useEffect(() => {
-    // DEV ONLY - Faz 0 boyunca örnek veri oluşturuyordu
-    // Faz 1.3'te disabled — gerçek kullanıcı verisi ile çalışıyoruz
-    // initSampleData();
+    const cachedEmail = getEmail();
+    const cachedRole = getRole();
+    if (cachedEmail) {
+      setEmailState(cachedEmail);
+      setRoleState(cachedRole);
+    } else {
+      // App restart: INITIAL_SESSION handler henüz tamamlanmamış olabilir
+      getCurrentUser().then(u => {
+        setEmailState(u?.user.email ?? null);
+        setRoleState(u?.role ?? null);
+      });
+    }
   }, []);
 
   const handleCikis = async () => {
@@ -35,6 +52,12 @@ export default function HomeScreen({ navigation }: any) {
           <TouchableOpacity onPress={handleCikis} style={styles.cikisBtn}>
             <Text style={styles.cikisText}>Çıkış</Text>
           </TouchableOpacity>
+        </View>
+        <View style={styles.userInfo}>
+          <Text style={styles.userEmail}>{email ?? ''}</Text>
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>{roleTurkce(role)}</Text>
+          </View>
         </View>
         <Text style={styles.title}>Sözleşmeler</Text>
       </View>
@@ -133,4 +156,8 @@ const styles = StyleSheet.create({
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cikisBtn: { paddingVertical: 4, paddingHorizontal: 8 },
   cikisText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
+  userInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, marginBottom: 4 },
+  userEmail: { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
+  roleBadge: { backgroundColor: 'rgba(159,225,203,0.15)', borderWidth: 1, borderColor: 'rgba(159,225,203,0.35)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  roleBadgeText: { color: '#9fe1cb', fontSize: 11 },
 });

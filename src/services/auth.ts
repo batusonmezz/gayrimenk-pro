@@ -1,10 +1,11 @@
 import { supabase } from '../storage/supabaseClient';
-import { setOrganizationId } from './authState';
+import { setOrganizationId, setRole, setEmail } from './authState';
 import type { User } from '@supabase/supabase-js';
 
 export interface AuthUser {
   user: User;
   organizationId: string | null;
+  role: string | null;
 }
 
 export interface SignUpResult extends AuthUser {
@@ -26,12 +27,12 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   if (!authData.user) throw new Error('Kayıt tamamlanamadı.');
 
   if (authData.session === null) {
-    return { user: authData.user, organizationId: null, needsEmailConfirmation: true };
+    return { user: authData.user, organizationId: null, role: null, needsEmailConfirmation: true };
   }
 
   const { data: userRecord, error: userFetchError } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', authData.user.id)
     .single();
 
@@ -40,10 +41,13 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   }
 
   const orgId = userRecord.organization_id;
-  console.log('[auth] signUp başarılı, org_id:', orgId);
+  const userRole = userRecord.role ?? null;
+  console.log('[auth] signUp başarılı, org_id:', orgId, 'role:', userRole);
 
   setOrganizationId(orgId);
-  return { user: authData.user, organizationId: orgId, needsEmailConfirmation: false };
+  setRole(userRole);
+  setEmail(authData.user.email ?? null);
+  return { user: authData.user, organizationId: orgId, role: userRole, needsEmailConfirmation: false };
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -53,19 +57,24 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', data.user.id)
     .single();
 
   const orgId = userRecord?.organization_id ?? null;
+  const userRole = userRecord?.role ?? null;
   setOrganizationId(orgId);
-  return { user: data.user, organizationId: orgId };
+  setRole(userRole);
+  setEmail(data.user.email ?? null);
+  return { user: data.user, organizationId: orgId, role: userRole };
 }
 
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error('Çıkış yapılamadı. Lütfen tekrar deneyin.');
   setOrganizationId(null);
+  setRole(null);
+  setEmail(null);
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -74,7 +83,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user.id)
     .single();
 
@@ -82,7 +91,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     console.warn('[auth] Kullanıcının organization_id\'si yok (yetim kullanıcı) - userId:', user.id);
   }
 
-  return { user, organizationId: userRecord?.organization_id ?? null };
+  const userRole = userRecord?.role ?? null;
+  setRole(userRole);
+  setEmail(user.email ?? null);
+  return { user, organizationId: userRecord?.organization_id ?? null, role: userRole };
 }
 
 export async function getSession(): Promise<boolean> {
