@@ -5,7 +5,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ---
 
-## Faz 3 Durumu (01.06.2026)
+## Faz 3 Durumu (02.06.2026)
 
 ### TAMAMLANAN
 
@@ -36,10 +36,19 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - `contract_items` / `contract_photos`: değişmedi — contracts SELECT üzerinden otomatik filtreleniyor
 - **Test edildi:** mal sahibi 1 sözleşme görüyor, cloud'a yazamıyor (42501 RLS reddi)
 
+**Faz 3.4a — HomeScreen kullanıcı bilgisi** (commit `630fc6d`)
+- `authState.ts`: role + email getter/setter eklendi
+- `auth.ts`: `AuthUser.role`, `getCurrentUser`/`signIn`/`signUp` SELECT role + `setRole`/`setEmail`
+- `App.tsx`: INITIAL_SESSION `setRole`
+- `HomeScreen.tsx`: header'da email + Türkçe rol badge, timing fallback (cache/getCurrentUser)
+- `roleTurkce` helper: `emlakci`→Emlakçı, `mal_sahibi`→Mal Sahibi, `kiraci`→Kiracı
+- **Test edildi:** email + rol badge görünüyor. tsc temiz.
+- TODO: mal sahibi badge tasarımı ileride iyileştirilecek
+
 ### GIT DURUMU
 
 - `origin/main` = `e5bd9f2` (Faz 2 sonu)
-- Lokal Faz 3 commit'leri **henüz push edilmedi**: `38e7872`, `e9de6f5`, `3d3180a`, `42eb7f1`
+- Lokal Faz 3 commit'leri **henüz push edilmedi**: `38e7872`, `e9de6f5`, `3d3180a`, `42eb7f1`, `630fc6d`
 - Faz 3 sonunda toplu push planlanıyor
 
 ### TEST VERİSİ (Supabase)
@@ -52,21 +61,20 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki — Faz 3.4: Rol Bazlı UI
 
-**HomeScreen — kullanıcı bilgisi:**
-- Giriş yapan email + rolü göster (Türkçe: `emlakci`→Emlakçı, `mal_sahibi`→Mal Sahibi, `kiraci`→Kiracı)
+~~**Faz 3.4a — HomeScreen kullanıcı bilgisi:** TAMAM (`630fc6d`)~~
 
-**Rol bazlı görünürlük:**
+**Faz 3.4b — Rol bazlı görünürlük (SONRAKİ):**
 - `mal_sahibi` / `kiraci`: "sözleşme oluştur" butonlarını GÖRMEMELİ
   (şu an görüyor, lokale hayalet yazıyor — RLS engelliyor ama UI açık)
 - `mal_sahibi` / `kiraci`: sadeleştirilmiş Home (kendi sözleşmeleri + kira takibi)
 
+**Faz 3.4c — Ekran uyarlamaları:**
+- `ListeScreen` (excel tablo görünümü) — rol uyarlama
+- `MalSahibiScreen` (mal sahibi → mülk gruplama) — rol uyarlama
+- `FormScreen`'e DOKUNMA (çok kompleks, ayrı faz)
+
 **KİŞİ GÖRÜNÜRLÜĞÜ:**
 - Mal sahibi/kiracı sözleşmedeki karşı tarafı görebilmeli
-
-**Geliştirilen ekranlar** (sıfırdan değil):
-- `ListeScreen` (excel tablo görünümü)
-- `MalSahibiScreen` (mal sahibi → mülk gruplama)
-- `FormScreen`'e DOKUNMA (çok kompleks, ayrı faz)
 
 ---
 
