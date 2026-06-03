@@ -19,6 +19,7 @@ function roleTurkce(role: string | null): string {
 export default function HomeScreen({ navigation }: any) {
   const [email, setEmailState] = useState<string | null>(null);
   const [role, setRoleState] = useState<string | null>(null);
+  const isEmlakci = role === 'emlakci';
 
   useEffect(() => {
     const cachedEmail = getEmail();
@@ -62,22 +63,26 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.title}>Sözleşmeler</Text>
       </View>
       <ScrollView style={{flex: 1, padding: 16}} contentContainerStyle={{paddingBottom: 80}} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
-        <Text style={styles.sectionLabel}>SÖZLEŞME TÜRÜ SEÇ</Text>
-        {CONTRACT_TYPES.filter(c => c.enabled !== false).map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.card}
-            onPress={() => navigation.navigate('Form', { type: item.id, title: item.title })}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.cardIcon}>{item.icon}</Text>
-            <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <Text style={styles.cardDesc}>{item.desc}</Text>
-            </View>
-            <Text style={styles.cardArrow}>›</Text>
-          </TouchableOpacity>
-        ))}
+        {isEmlakci && (
+          <>
+            <Text style={styles.sectionLabel}>SÖZLEŞME TÜRÜ SEÇ</Text>
+            {CONTRACT_TYPES.filter(c => c.enabled !== false).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.card}
+                onPress={() => navigation.navigate('Form', { type: item.id, title: item.title })}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cardIcon}>{item.icon}</Text>
+                <View style={styles.cardText}>
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  <Text style={styles.cardDesc}>{item.desc}</Text>
+                </View>
+                <Text style={styles.cardArrow}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
         <Text style={styles.sectionLabel}>ARAÇLAR</Text>
         <TouchableOpacity
           style={styles.researchBanner}
