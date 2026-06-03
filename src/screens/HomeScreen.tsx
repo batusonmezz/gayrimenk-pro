@@ -20,6 +20,7 @@ export default function HomeScreen({ navigation }: any) {
   const [email, setEmailState] = useState<string | null>(null);
   const [role, setRoleState] = useState<string | null>(null);
   const isEmlakci = role === 'emlakci';
+  const isMalSahibiVeyaEmlakci = role === 'emlakci' || role === 'mal_sahibi';
 
   useEffect(() => {
     const cachedEmail = getEmail();
@@ -122,18 +123,20 @@ export default function HomeScreen({ navigation }: any) {
           </View>
           <Text style={styles.cardArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('MalSahipleri')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.cardIcon}>🏘️</Text>
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>Mal Sahipleri</Text>
-            <Text style={styles.cardDesc}>Mülk bazlı takip ve rapor</Text>
-          </View>
-          <Text style={styles.cardArrow}>›</Text>
-        </TouchableOpacity>
+        {isMalSahibiVeyaEmlakci && (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('MalSahipleri')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cardIcon}>🏘️</Text>
+            <View style={styles.cardText}>
+              <Text style={styles.cardTitle}>Mal Sahipleri</Text>
+              <Text style={styles.cardDesc}>Mülk bazlı takip ve rapor</Text>
+            </View>
+            <Text style={styles.cardArrow}>›</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
