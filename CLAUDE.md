@@ -5,7 +5,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ---
 
-## Faz 3 Durumu (02.06.2026)
+## Faz 3 Durumu (04.06.2026)
 
 ### TAMAMLANAN
 
@@ -43,13 +43,26 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - `HomeScreen.tsx`: header'da email + Türkçe rol badge, timing fallback (cache/getCurrentUser)
 - `roleTurkce` helper: `emlakci`→Emlakçı, `mal_sahibi`→Mal Sahibi, `kiraci`→Kiracı
 - **Test edildi:** email + rol badge görünüyor. tsc temiz.
-- TODO: mal sahibi badge tasarımı ileride iyileştirilecek
 
-### GIT DURUMU
+**Faz 3.4b — Rol bazlı buton görünürlüğü** (commit `c82db8e`)
+- "Sözleşme Oluştur" butonu sadece `emlakci` rolünde görünüyor
 
-- `origin/main` = `e5bd9f2` (Faz 2 sonu)
-- Lokal Faz 3 commit'leri **henüz push edilmedi**: `38e7872`, `e9de6f5`, `3d3180a`, `42eb7f1`, `630fc6d`
-- Faz 3 sonunda toplu push planlanıyor
+**Faz 3.4c — Mal Sahipleri kartı rol bazlı** (commit `36e9c99`)
+- Mal sahibi / kiracı rolleri Mal Sahipleri kartını göremez
+
+**Production fix — Düzenleme veri kaybı + loading** (commit `5d24c2a`)
+- `KayitlarScreen` düzenle navigate'ine `fotograflar` + `esyaListesi` eklendi
+- `FormScreen` route.params'tan bunları okuyup useState başlangıcına veriyor
+- `SupabaseStorageService`: `fotograflar` guard güçlendirildi (boş `{}` gelince mevcut korunur)
+- `KayitlarScreen` + `ListeScreen`: loading state + `ActivityIndicator` + catch
+- **Test edildi:** eşyalar düzenlemede dolu geliyor, kaydedince korunuyor, spinner çalışıyor. tsc temiz.
+- **Açık:** fotoğraflar düzenlemede görünmüyor (veri korunuyor, sadece görüntüleme — ileride)
+
+### GIT / PLAY DURUMU
+
+- `origin/main` = `0c3ca52` (versionCode 12)
+- **Play Store versionCode 12** yüklendi (04.06.2026): rol UI + eşya fix + loading
+- Tüm Faz 3 commit'leri push edildi
 
 ### TEST VERİSİ (Supabase)
 
@@ -59,29 +72,21 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ---
 
-## Sıradaki — Faz 3.4: Rol Bazlı UI
+## Sıradaki
 
-~~**Faz 3.4a — HomeScreen kullanıcı bilgisi:** TAMAM (`630fc6d`)~~
+**Faz 3.5a — Ödeme takip sistemi (SONRAKİ):**
+- `payments` tablosu migration: `contract_id`, `ay`, `tutar_kurus`, `odendi_mi`, `odeme_tarihi`
+- 12 ay otomatik oluşturma (sözleşme kaydedilince)
+- UI: ödeme listesi + işaretle
 
-**Faz 3.4b — Rol bazlı görünürlük (SONRAKİ):**
-- `mal_sahibi` / `kiraci`: "sözleşme oluştur" butonlarını GÖRMEMELİ
-  (şu an görüyor, lokale hayalet yazıyor — RLS engelliyor ama UI açık)
-- `mal_sahibi` / `kiraci`: sadeleştirilmiş Home (kendi sözleşmeleri + kira takibi)
+**Açık borçlar:**
+- Fotoğraflar düzenlemede görünmüyor (veri korunuyor, sadece FormScreen UI — ayrı faz)
+- Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
+- `ListeScreen` + `MalSahibiScreen` rol uyarlama
 
-**Faz 3.4c — Ekran uyarlamaları:**
-- `ListeScreen` (excel tablo görünümü) — rol uyarlama
-- `MalSahibiScreen` (mal sahibi → mülk gruplama) — rol uyarlama
-- `FormScreen`'e DOKUNMA (çok kompleks, ayrı faz)
-
-**KİŞİ GÖRÜNÜRLÜĞÜ:**
-- Mal sahibi/kiracı sözleşmedeki karşı tarafı görebilmeli
-
----
-
-## Sonraki Fazlar
-
-- **Faz 3.3** — Davet sistemi: `inviteUserByEmail` + SMTP, mal sahibi/kiracıyı org'a davet
-- **Faz 3.5** — Dekont / ödeme takip sistemi
+**Ertelenmiş:**
+- **Faz 3.3** — Davet sistemi: `inviteUserByEmail` + SMTP
+- **Faz 3.4 kalan** — `FormScreen` rol uyarlama (çok kompleks, ayrı faz)
 
 ---
 
