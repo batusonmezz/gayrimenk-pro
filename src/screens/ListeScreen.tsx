@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { sozlesmeleriGetir, SozlesmeKayit } from '../services/storage';
 
@@ -20,9 +20,14 @@ export default function ListeScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
   const [filtre, setFiltre] = useState<Filtre>('Hepsi');
   const [arama, setArama] = useState('');
+  const [yukleniyor, setYukleniyor] = useState(true);
 
   useFocusEffect(useCallback(() => {
-    sozlesmeleriGetir().then(setKayitlar);
+    setYukleniyor(true);
+    sozlesmeleriGetir()
+      .then(setKayitlar)
+      .catch(() => {})
+      .finally(() => setYukleniyor(false));
   }, []));
 
   const filtrelenmis = kayitlar.filter(k => {
@@ -139,7 +144,11 @@ export default function ListeScreen({ navigation }: any) {
                 </TouchableOpacity>
               );
             })}
-            {filtrelenmis.length === 0 && (
+            {yukleniyor ? (
+              <View style={styles.bosView}>
+                <ActivityIndicator size="large" color="#0f6e56" />
+              </View>
+            ) : filtrelenmis.length === 0 && (
               <View style={styles.bosView}>
                 <Text style={styles.bosText}>Kayıt bulunamadı</Text>
               </View>

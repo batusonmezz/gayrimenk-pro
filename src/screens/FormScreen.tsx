@@ -37,12 +37,12 @@ const KIRA_FIELDS = [
 ];
 
 export default function FormScreen({ navigation, route }: any) {
-  const { type, title, formData: mevcutFormData, kayitId } = route.params;
+  const { type, title, formData: mevcutFormData, kayitId, fotograflar: mevcutFotograflar, esyaListesi: mevcutEsyaListesi } = route.params;
   const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState<Record<string, string>>(mevcutFormData || {});
   const [loading, setLoading] = useState(false);
-  const [fotograflar, setFotograflar] = useState<Record<string, string>>({});
-  const [esyaListesi, setEsyaListesi] = useState<{ ad: string; marka: string; adet: string }[]>([]);
+  const [fotograflar, setFotograflar] = useState<Record<string, string>>(mevcutFotograflar ?? {});
+  const [esyaListesi, setEsyaListesi] = useState<{ ad: string; marka: string; adet: string }[]>(mevcutEsyaListesi ?? []);
   const [yeniEsya, setYeniEsya] = useState({ ad: '', marka: '', adet: '1' });
 
   const kefilVar = formData.kefil_var === 'Evet';

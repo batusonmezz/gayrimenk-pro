@@ -143,18 +143,16 @@ export class SupabaseStorageService implements IStorageService {
 
     if (contractError) throw contractError;
 
-    if (fotograflar !== undefined) {
+    if (fotograflar !== undefined && Object.keys(fotograflar).length > 0) {
+      // undefined veya {} gelince mevcut fotoğraflar korunur; sadece dolu set gelince güncellenir
       await supabase.from('contract_photos').delete().eq('contract_id', id);
-      if (Object.keys(fotograflar).length > 0) {
-        // TODO (Faz sonrası): Supabase Storage'a yükle
-        const photos = Object.entries(fotograflar).map(([key, uri]) => ({
-          contract_id: id,
-          photo_key: key,
-          storage_path: uri,
-        }));
-        const { error: photosError } = await supabase.from('contract_photos').insert(photos);
-        if (photosError) throw photosError;
-      }
+      const photos = Object.entries(fotograflar).map(([key, uri]) => ({
+        contract_id: id,
+        photo_key: key,
+        storage_path: uri,
+      }));
+      const { error: photosError } = await supabase.from('contract_photos').insert(photos);
+      if (photosError) throw photosError;
     }
 
     if (esyaListesi !== undefined) {

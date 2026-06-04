@@ -1,13 +1,18 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { sozlesmeleriGetir, sozlesmeSil, SozlesmeKayit } from '../services/storage';
 
 export default function KayitlarScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
+  const [yukleniyor, setYukleniyor] = useState(true);
 
   useFocusEffect(useCallback(() => {
-    sozlesmeleriGetir().then(setKayitlar);
+    setYukleniyor(true);
+    sozlesmeleriGetir()
+      .then(setKayitlar)
+      .catch(() => {})
+      .finally(() => setYukleniyor(false));
   }, []));
 
   const handleSil = (id: string, ad: string) => {
@@ -31,7 +36,11 @@ export default function KayitlarScreen({ navigation }: any) {
       </View>
 
       <ScrollView style={styles.content} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
-        {kayitlar.length === 0 ? (
+        {yukleniyor ? (
+          <View style={styles.empty}>
+            <ActivityIndicator size="large" color="#0f6e56" />
+          </View>
+        ) : kayitlar.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>📄</Text>
             <Text style={styles.emptyText}>Henüz kayıtlı sözleşme yok</Text>
@@ -66,6 +75,8 @@ export default function KayitlarScreen({ navigation }: any) {
                     title: kayit.tur,
                     formData: kayit.formData,
                     kayitId: kayit.id,
+                    fotograflar: kayit.fotograflar,
+                    esyaListesi: kayit.esyaListesi,
                   })}
                   style={styles.duzenleBtn}
                 >
