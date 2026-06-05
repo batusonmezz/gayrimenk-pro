@@ -1,12 +1,31 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { sozlesmeleriGetir, sozlesmeSil, SozlesmeKayit } from '../services/storage';
+import { getRole } from '../services/authState';
+import { getCurrentUser } from '../services/auth';
+import { supabase } from '../storage/supabaseClient';
 
 export default function KayitlarScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [role, setRoleState] = useState<string | null>(null);
+  const [odemeCount, setOdemeCount] = useState<Record<string, number>>({});
+  const [rpcYukleniyor, setRpcYukleniyor] = useState<string | null>(null);
 
+  const isEmlakci = role === 'emlakci';
+
+  // Rol: cache'ten hızlı yükle, soğuk başlangıçta async çöz
+  useEffect(() => {
+    const cached = getRole();
+    if (cached) {
+      setRoleState(cached);
+    } else {
+      getCurrentUser().then(u => setRoleState(u?.role ?? null));
+    }
+  }, []);
+
+  // Sözleşme listesi: ekran odaklandığında yenile
   useFocusEffect(useCallback(() => {
     setYukleniyor(true);
     sozlesmeleriGetir()
@@ -14,6 +33,26 @@ export default function KayitlarScreen({ navigation }: any) {
       .catch(() => {})
       .finally(() => setYukleniyor(false));
   }, []));
+
+  // Ödeme sayıları: role veya kayitlar değişince yenile (soğuk başlangıç güvenli)
+  useEffect(() => {
+    if (role !== 'emlakci' || kayitlar.length === 0) {
+      setOdemeCount({});
+      return;
+    }
+    const ids = kayitlar.map(k => k.id);
+    supabase
+      .from('payments')
+      .select('contract_id')
+      .in('contract_id', ids)
+      .then(({ data: pData }) => {
+        const counts: Record<string, number> = {};
+        (pData ?? []).forEach((p: { contract_id: string }) => {
+          counts[p.contract_id] = (counts[p.contract_id] ?? 0) + 1;
+        });
+        setOdemeCount(counts);
+      });
+  }, [role, kayitlar]);
 
   const handleSil = (id: string, ad: string) => {
     Alert.alert('Sil', `"${ad}" sözleşmesi silinsin mi?`, [
@@ -23,6 +62,26 @@ export default function KayitlarScreen({ navigation }: any) {
         setKayitlar(prev => prev.filter(s => s.id !== id));
       }},
     ]);
+  };
+
+  const handleOdemeTablosuOlustur = async (contractId: string) => {
+    setRpcYukleniyor(contractId);
+    try {
+      const { data, error } = await supabase.rpc('create_payment_schedule', {
+        p_contract_id: contractId,
+      });
+      if (error) throw error;
+      if (data === 0) {
+        Alert.alert('Bilgi', 'Ödeme tablosu zaten mevcut.');
+      } else {
+        Alert.alert('Başarılı', `${data} aylık ödeme planı oluşturuldu.`);
+        setOdemeCount(prev => ({ ...prev, [contractId]: data as number }));
+      }
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message ?? 'Ödeme planı oluşturulamadı.');
+    } finally {
+      setRpcYukleniyor(null);
+    }
   };
 
   return (
@@ -62,33 +121,59 @@ export default function KayitlarScreen({ navigation }: any) {
               })}
               activeOpacity={0.7}
             >
-              <View style={styles.cardLeft}>
-                <Text style={styles.cardTur}>{kayit.tur}</Text>
-                <Text style={styles.cardAd}>{kayit.kiraya_veren_ad} → {kayit.kiraci_ad}</Text>
-                <Text style={styles.cardKira}>{kayit.aylik_kira} TL/ay</Text>
+              <View style={styles.cardRow}>
+                <View style={styles.cardLeft}>
+                  <Text style={styles.cardTur}>{kayit.tur}</Text>
+                  <Text style={styles.cardAd}>{kayit.kiraya_veren_ad} → {kayit.kiraci_ad}</Text>
+                  <Text style={styles.cardKira}>{kayit.aylik_kira} TL/ay</Text>
+                </View>
+                <View style={styles.cardRight}>
+                  <Text style={styles.cardTarih}>{kayit.tarih}</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Form', {
+                      type: kayit.tur === 'Kira Sözleşmesi' ? 'kira' : kayit.tur,
+                      title: kayit.tur,
+                      formData: kayit.formData,
+                      kayitId: kayit.id,
+                      fotograflar: kayit.fotograflar,
+                      esyaListesi: kayit.esyaListesi,
+                    })}
+                    style={styles.duzenleBtn}
+                  >
+                    <Text style={styles.duzenleText}>Düzenle</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleSil(kayit.id, kayit.kiraci_ad)}
+                    style={styles.silBtn}
+                  >
+                    <Text style={styles.silText}>Sil</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.cardRight}>
-                <Text style={styles.cardTarih}>{kayit.tarih}</Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('Form', {
-                    type: kayit.tur === 'Kira Sözleşmesi' ? 'kira' : kayit.tur,
-                    title: kayit.tur,
-                    formData: kayit.formData,
-                    kayitId: kayit.id,
-                    fotograflar: kayit.fotograflar,
-                    esyaListesi: kayit.esyaListesi,
-                  })}
-                  style={styles.duzenleBtn}
-                >
-                  <Text style={styles.duzenleText}>Düzenle</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleSil(kayit.id, kayit.kiraci_ad)}
-                  style={styles.silBtn}
-                >
-                  <Text style={styles.silText}>Sil</Text>
-                </TouchableOpacity>
-              </View>
+
+              {isEmlakci && (
+                <>
+                  <View style={styles.cardSeparator} />
+                  {(odemeCount[kayit.id] ?? 0) > 0 ? (
+                    <TouchableOpacity
+                      onPress={() => Alert.alert('Yakında', 'Ödeme takip ekranı 3.5b fazında eklenecek.')}
+                      style={styles.odemeBtn}
+                    >
+                      <Text style={styles.odemeBtnText}>Ödeme Takibi</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => handleOdemeTablosuOlustur(kayit.id)}
+                      disabled={rpcYukleniyor === kayit.id}
+                      style={[styles.odemeBtn, rpcYukleniyor === kayit.id && styles.odemeBtnDisabled]}
+                    >
+                      <Text style={styles.odemeBtnText}>
+                        {rpcYukleniyor === kayit.id ? '...' : 'Ödeme Tablosu Oluştur'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
             </TouchableOpacity>
           ))
         )}
@@ -108,7 +193,8 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, gap: 12 },
   emptyIcon: { fontSize: 48 },
   emptyText: { fontSize: 15, color: '#888' },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0', flexDirection: 'row', alignItems: 'center' },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0', flexDirection: 'column' },
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
   cardLeft: { flex: 1, gap: 3 },
   cardTur: { fontSize: 11, color: '#0f6e56', fontWeight: '500', letterSpacing: 0.5 },
   cardAd: { fontSize: 14, fontWeight: '500', color: '#1a1a1a' },
@@ -119,4 +205,8 @@ const styles = StyleSheet.create({
   duzenleText: { fontSize: 11, color: '#0f6e56', fontWeight: '500' },
   silBtn: { backgroundColor: '#fee2e2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
   silText: { fontSize: 11, color: '#dc2626', fontWeight: '500' },
+  cardSeparator: { height: 1, backgroundColor: '#f0f0f0', marginTop: 10 },
+  odemeBtn: { paddingVertical: 8, alignItems: 'center', borderRadius: 6, marginTop: 8, backgroundColor: '#e8f4fd' },
+  odemeBtnDisabled: { opacity: 0.5 },
+  odemeBtnText: { fontSize: 12, color: '#1a6fa8', fontWeight: '500' },
 });
