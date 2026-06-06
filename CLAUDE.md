@@ -5,7 +5,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ---
 
-## Faz 3 Durumu (04.06.2026)
+## Faz 3 Durumu (06.06.2026)
 
 ### TAMAMLANAN
 
@@ -58,11 +58,32 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - **Test edildi:** eşyalar düzenlemede dolu geliyor, kaydedince korunuyor, spinner çalışıyor. tsc temiz.
 - **Açık:** fotoğraflar düzenlemede görünmüyor (veri korunuyor, sadece görüntüleme — ileride)
 
+**Faz 3.5a — Ödeme takip sistemi altyapısı** (commit `54d2f3e`)
+- Migration `007_payments.sql`: `payments` tablosu (`donem DATE`, `tutar_kurus INTEGER`, `vade_tarihi DATE`, `durum: beklemede|odendi|reddedildi`)
+- RLS: `payments_select_emlakci` (org scope) + `payments_select_taraflar` (`user_can_access_contract` helper)
+- `create_payment_schedule` RPC: emlakci-only SECURITY DEFINER, 12 ay set-based INSERT, ay-sonu clamp
+- `KayitlarScreen`: "Ödeme Tablosu Oluştur" butonu (emlakci, count=0)
+- **Test edildi:** 12 aylık plan oluşturuluyor, RLS reddi taraflarda doğrulandı
+
+**Faz 3.5b — Ödeme takip ekranı** (commit `1cfeb03`)
+- `src/screens/OdemeTakipScreen.tsx`: yeni ekran — contract bazlı ödeme listesi
+  - RLS auto-scope: emlakci/kiraci/mal_sahibi tek sorgu, taraf yalnız kendi sözleşmesini görür
+  - Özet kart: Tahsil Edilen / Kalan tutar + Ödendi/Bekliyor/Gecikti rozetleri
+  - `gecikti` client-side hesaplanan: `durum==='beklemede' && vade < bugun` (DB'ye yazılmaz)
+  - `parseYerelTarih`: local Date ctor — UTC/+3 kayması yok; `vade < bugun` strict (bugün vadeli = Bekliyor)
+  - `formatTL`: integer kuruş arithmetic, float hatası imkansız
+  - FlatList `flex:1` — özet sabit, liste scroll
+  - Loading / hata / boş durum yönetimi
+- `KayitlarScreen`: odemeCount gate `role===null`'a gevşetildi (taraflar da count çeker), buton 3'e bölündü (Oluştur emlakci-only / Takibi count>0 herkes)
+- `App.tsx`: `OdemeTakip` stack kaydı
+- Sıfır migration, versionCode değişmedi
+- **Test edildi:** emlakçı 12 satır + özet, kiraci/mal_sahibi RLS gerçek-auth, gecikti/bugün/ödendi ayrımı, taraflarda "Oluştur" yok
+
 ### GIT / PLAY DURUMU
 
-- `origin/main` = `0c3ca52` (versionCode 12)
+- `origin/main` = `1cfeb03` (versionCode 12)
 - **Play Store versionCode 12** yüklendi (04.06.2026): rol UI + eşya fix + loading
-- Tüm Faz 3 commit'leri push edildi
+- Faz 3.5a+3.5b push edildi (06.06.2026)
 
 ### TEST VERİSİ (Supabase)
 
@@ -74,10 +95,13 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
-**Faz 3.5a — Ödeme takip sistemi (SONRAKİ):**
-- `payments` tablosu migration: `contract_id`, `ay`, `tutar_kurus`, `odendi_mi`, `odeme_tarihi`
-- 12 ay otomatik oluşturma (sözleşme kaydedilince)
-- UI: ödeme listesi + işaretle
+**Faz 3.5c — Dekont yükleme (SONRAKİ):**
+- Ödeme satırına dekont fotoğrafı ekleme (Storage upload → `dekont_url`)
+- OdemeTakipScreen'de dekont önizleme
+
+**Faz 3.5d — Durum değiştirme:**
+- Emlakçı: ödeme satırını `odendi` / `reddedildi` olarak işaretleme
+- `onaylayan_user_id` + `odeme_tarihi` yazımı (RPC ile)
 
 **Açık borçlar:**
 - Fotoğraflar düzenlemede görünmüyor (veri korunuyor, sadece FormScreen UI — ayrı faz)
@@ -90,10 +114,68 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ---
 
+## Faz 4 — Mülk & Kişi Modeli (PLANLANDI)
+
+> Amaç: Kişi ve mülk verisini sözleşmeden ayırıp tekrar kullanılabilir hale getirmek.
+> Bilgi bir kez girilir, sözleşme bağlar. Ana plandaki Faz 3 (buildings+units+tenants+leases)
+> modelinin gerçekleşmesi. (Numara: ödemeler 3.5'te yapıldığı için ana planla birebir değil.)
+
+### Strateji: ADDITIVE (sıfır bozulma)
+- Yeni tablolar eklenir; mevcut contracts.form_data ve eski sözleşmeler DOKUNULMAZ.
+- Eski sözleşmeler unit_id=NULL kalır, eskisi gibi çalışır.
+- Yeni sözleşmeler yeni modeli kullanır. Eski veri backfill'i sonraki adım (string dedup elle).
+
+### Yeni tablolar (hepsi org-scoped, RLS)
+**persons (kişiler):** id, organization_id, ad_soyad, tc_kimlik, telefon, adres,
+  kimlik_foto_url, user_id (NULL → davet/profil için), created_at
+  - Rol kişide değil; aynı kişi farklı sözleşmede farklı rolde olabilir
+  - KVKK: TC UI'da maskelenir, kimlik_foto hassas veri
+**buildings (binalar):** id, organization_id, ad, il, ilce, mahalle, acik_adres, created_at
+**units (daireler):** id, organization_id, building_id (FK), blok, kat, daire_no,
+  mal_sahibi_person_id (FK persons — MAL SAHİBİ DAİRE DÜZEYİNDE), created_at
+  - Aynı binada farklı dairelerin farklı sahibi olabilir
+**contracts (ekleme):** += unit_id UUID NULL (FK units), += kiraci_person_id UUID NULL (FK persons)
+  - Eski kayıtlar ikisi de NULL
+
+### İlişkiler
+- building 1—N units · person 1—N units (mal sahibi) · person 1—N contracts (kiracı)
+- unit 1—N contracts (zaman içinde) · contract 1—N payments (mevcut)
+
+### RLS
+- persons/buildings/units: organization_id = auth_org_id() (emlakçı yönetir)
+- Taraf erişimi/profil = person.user_id üzerinden, ama DAVET sistemine (Faz 3.3) bağlı → BU FAZDA ERTELENDİ
+- Mevcut taraf erişimi (contracts.mal_sahibi_user_id) korunur
+
+### Akış (yeni sözleşme — FormScreen)
+1. Bina seç/oluştur → 2. Daire seç/oluştur (mal sahibi kişiyi ata) →
+3. Kiracı kişi seç/oluştur → 4. Kira + alanlar → unit_id + kiraci_person_id ile kaydet
+- Mevcut kişi/daire seçilince bilgiler otomatik dolar (TC, tel, adres, foto)
+
+### MalSahibiScreen
+- String GROUP BY (B1) yerine persons/units'ten okur — isim çakışması yok
+
+### Aşamalı implementasyon
+1. Migration 008: persons + buildings + units + RLS + contracts kolonları (additive)
+2. FormScreen entegrasyonu (yeni kayıt: bina/daire/kişi seç-veya-oluştur)
+3. MalSahibiScreen persons/units'ten okuma
+4. (Ayrı) B4: gerçek Storage bucket — kimlik foto reuse için
+5. (Ayrı/sonra) Eski form_data → persons/units backfill (elle onaylı)
+6. (Ayrı/sonra) Taraf erişimi + profil = davet sistemi (Faz 3.3)
+
+### Keşif bulguları (06.06.2026)
+- Mevcut: sözleşme-merkezli, kişi/mülk verisi contracts.form_data JSONB'de gömülü
+- B1: MalSahibiScreen kiraya_veren_ad string'iyle gruplanıyor (isim çakışması)
+- B2: Çok daireli mal sahibi bilgisi her sözleşmede tekrar
+- B3: Bina/blok/kat formda yok, kapi_no serbest text
+- B4: kimlik foto base64/URI, gerçek Storage bucket yok
+- B5: mal_sahibi_user_id prod'da boş (davet yok)
+
+---
+
 ## Teknik Notlar
 
 - **Email onayı:** Şu an KAPALI (Supabase Auth settings). Production'da açılacak.
   Trigger zaten `needsEmailConfirmation` durumunu handle ediyor — sorun olmayacak.
 - **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
 - **AI:** Claude Sonnet 4.6 via Supabase Edge Function proxy (+ direct fallback)
-- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 (hepsi Supabase'de çalıştırıldı)
+- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 (hepsi Supabase'de çalıştırıldı)
