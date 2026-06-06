@@ -36,7 +36,7 @@ export default function KayitlarScreen({ navigation }: any) {
 
   // Ödeme sayıları: role veya kayitlar değişince yenile (soğuk başlangıç güvenli)
   useEffect(() => {
-    if (role !== 'emlakci' || kayitlar.length === 0) {
+    if (role === null || kayitlar.length === 0) {
       setOdemeCount({});
       return;
     }
@@ -151,28 +151,30 @@ export default function KayitlarScreen({ navigation }: any) {
                 </View>
               </View>
 
-              {isEmlakci && (
-                <>
-                  <View style={styles.cardSeparator} />
-                  {(odemeCount[kayit.id] ?? 0) > 0 ? (
-                    <TouchableOpacity
-                      onPress={() => Alert.alert('Yakında', 'Ödeme takip ekranı 3.5b fazında eklenecek.')}
-                      style={styles.odemeBtn}
-                    >
-                      <Text style={styles.odemeBtnText}>Ödeme Takibi</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => handleOdemeTablosuOlustur(kayit.id)}
-                      disabled={rpcYukleniyor === kayit.id}
-                      style={[styles.odemeBtn, rpcYukleniyor === kayit.id && styles.odemeBtnDisabled]}
-                    >
-                      <Text style={styles.odemeBtnText}>
-                        {rpcYukleniyor === kayit.id ? '...' : 'Ödeme Tablosu Oluştur'}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </>
+              {(isEmlakci || (odemeCount[kayit.id] ?? 0) > 0) && (
+                <View style={styles.cardSeparator} />
+              )}
+              {isEmlakci && (odemeCount[kayit.id] ?? 0) === 0 && (
+                <TouchableOpacity
+                  onPress={() => handleOdemeTablosuOlustur(kayit.id)}
+                  disabled={rpcYukleniyor === kayit.id}
+                  style={[styles.odemeBtn, rpcYukleniyor === kayit.id && styles.odemeBtnDisabled]}
+                >
+                  <Text style={styles.odemeBtnText}>
+                    {rpcYukleniyor === kayit.id ? '...' : 'Ödeme Tablosu Oluştur'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {(odemeCount[kayit.id] ?? 0) > 0 && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('OdemeTakip', {
+                    contractId: kayit.id,
+                    baslik: `${kayit.kiraya_veren_ad} → ${kayit.kiraci_ad}`,
+                  })}
+                  style={styles.odemeBtn}
+                >
+                  <Text style={styles.odemeBtnText}>Ödeme Takibi</Text>
+                </TouchableOpacity>
               )}
             </TouchableOpacity>
           ))

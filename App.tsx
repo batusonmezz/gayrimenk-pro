@@ -15,6 +15,7 @@ import ResearchScreen from './src/screens/ResearchScreen';
 import KayitlarScreen from './src/screens/KayitlarScreen';
 import MalSahibiScreen from './src/screens/MalSahibiScreen';
 import ListeScreen from './src/screens/ListeScreen';
+import OdemeTakipScreen from './src/screens/OdemeTakipScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 
@@ -73,6 +74,7 @@ export default function App() {
                 <Stack.Screen name="Kayitlar"     component={KayitlarScreen} />
                 <Stack.Screen name="MalSahipleri" component={MalSahibiScreen} />
                 <Stack.Screen name="Liste"        component={ListeScreen} />
+                <Stack.Screen name="OdemeTakip"  component={OdemeTakipScreen} />
               </>
             ) : (
               <>
