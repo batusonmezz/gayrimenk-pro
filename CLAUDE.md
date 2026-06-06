@@ -155,7 +155,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - String GROUP BY (B1) yerine persons/units'ten okur — isim çakışması yok
 
 ### Aşamalı implementasyon
-1. Migration 008: persons + buildings + units + RLS + contracts kolonları (additive)
+1. ✅ Migration 008 — uygulandı + doğrulandı (3 tablo, 12 policy, eski sözleşmeler bozulmadı, 06.06)
 2. FormScreen entegrasyonu (yeni kayıt: bina/daire/kişi seç-veya-oluştur)
 3. MalSahibiScreen persons/units'ten okuma
 4. (Ayrı) B4: gerçek Storage bucket — kimlik foto reuse için
