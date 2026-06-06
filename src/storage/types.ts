@@ -11,4 +11,5 @@ export interface SozlesmeKayit {
   genelMaddeler?: string[];
   fotograflar?: Record<string, string>;
   esyaListesi?: { ad: string; marka: string; adet: string }[];
+  kiraci_person_id?: string | null;
 }

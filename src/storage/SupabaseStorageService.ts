@@ -19,10 +19,52 @@ function parseKurus(aylik_kira: string): number {
 }
 
 export class SupabaseStorageService implements IStorageService {
+  private async upsertKiraciPerson(
+    orgId: string,
+    data: { ad?: string; tc?: string; adres?: string; tel?: string },
+    existingPersonId?: string | null
+  ): Promise<string | null> {
+    try {
+      if (existingPersonId) return existingPersonId;
+      const ad = data.ad?.trim() ?? '';
+      if (!ad) return null;
+      const tcClean = data.tc?.trim() || null;
+      const telClean = data.tel?.trim() || null;
+      const adresClean = data.adres?.trim() || null;
+
+      if (tcClean) {
+        const { data: existing } = await supabase
+          .from('persons')
+          .select('id')
+          .eq('organization_id', orgId)
+          .eq('tc_kimlik', tcClean)
+          .maybeSingle();
+        if (existing?.id) return existing.id as string;
+      }
+
+      const { data: inserted, error } = await supabase
+        .from('persons')
+        .insert({ organization_id: orgId, ad_soyad: ad, tc_kimlik: tcClean, telefon: telClean, adres: adresClean })
+        .select('id')
+        .single();
+      if (error) { console.warn('[persons] insert hata:', error); return null; }
+      return inserted.id as string;
+    } catch (e) {
+      console.warn('[persons] upsert hata:', e);
+      return null;
+    }
+  }
+
   async sozlesmeKaydet(kayit: Omit<SozlesmeKayit, 'id' | 'tarih'>): Promise<string> {
     const tarih = new Date().toLocaleDateString('tr-TR');
     const organizationId = getOrganizationId();
     if (!organizationId) throw new Error('Oturum bilgisi eksik, lütfen tekrar giriş yapın.');
+
+    const resolvedPersonId = await this.upsertKiraciPerson(
+      organizationId,
+      { ad: kayit.formData.kiraci_ad, tc: kayit.formData.kiraci_tc, adres: kayit.formData.kiraci_adres, tel: kayit.formData.kiraci_tel },
+      kayit.kiraci_person_id
+    );
 
     const { data: contract, error: contractError } = await supabase
       .from('contracts')
@@ -37,6 +79,7 @@ export class SupabaseStorageService implements IStorageService {
         ozel_maddeler: kayit.ozelMaddeler ?? [],
         genel_maddeler: kayit.genelMaddeler ?? [],
         organization_id: organizationId,
+        kiraci_person_id: resolvedPersonId ?? null,
       })
       .select('id')
       .single();
@@ -115,6 +158,7 @@ export class SupabaseStorageService implements IStorageService {
         fotograflar:
           Object.keys(photoRecord).length > 0 ? photoRecord : undefined,
         esyaListesi: items.length > 0 ? items : undefined,
+        kiraci_person_id: (row.kiraci_person_id as string | null) ?? null,
       };
     });
   }
@@ -126,8 +170,22 @@ export class SupabaseStorageService implements IStorageService {
     ozelMaddeler?: string[],
     genelMaddeler?: string[],
     fotograflar?: Record<string, string>,
-    esyaListesi?: { ad: string; marka: string; adet: string }[]
+    esyaListesi?: { ad: string; marka: string; adet: string }[],
+    kiraciPersonId?: string | null
   ): Promise<void> {
+    const orgId =
+      getOrganizationId() ??
+      ((await supabase.from('contracts').select('organization_id').eq('id', id).single()).data?.organization_id as string | null | undefined) ??
+      null;
+
+    const resolvedPersonId = orgId
+      ? await this.upsertKiraciPerson(
+          orgId,
+          { ad: formData.kiraci_ad, tc: formData.kiraci_tc, adres: formData.kiraci_adres, tel: formData.kiraci_tel },
+          kiraciPersonId
+        )
+      : null;
+
     const { error: contractError } = await supabase
       .from('contracts')
       .update({
@@ -138,6 +196,7 @@ export class SupabaseStorageService implements IStorageService {
         sozlesme_metni: sozlesmeMetni,
         ozel_maddeler: ozelMaddeler ?? [],
         genel_maddeler: genelMaddeler ?? [],
+        kiraci_person_id: resolvedPersonId ?? kiraciPersonId ?? null,
       })
       .eq('id', id);
 

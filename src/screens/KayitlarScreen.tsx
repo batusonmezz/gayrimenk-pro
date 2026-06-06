@@ -137,6 +137,7 @@ export default function KayitlarScreen({ navigation }: any) {
                       kayitId: kayit.id,
                       fotograflar: kayit.fotograflar,
                       esyaListesi: kayit.esyaListesi,
+                      kiraciPersonId: kayit.kiraci_person_id ?? null,
                     })}
                     style={styles.duzenleBtn}
                   >

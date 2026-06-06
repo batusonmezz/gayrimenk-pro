@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import KimlikFoto from '../components/KimlikFoto';
+import PersonPicker from '../components/PersonPicker';
 
 const KIRA_FIELDS = [
   { section: 'TAŞINMAZ BİLGİLERİ', fields: [
@@ -37,13 +38,15 @@ const KIRA_FIELDS = [
 ];
 
 export default function FormScreen({ navigation, route }: any) {
-  const { type, title, formData: mevcutFormData, kayitId, fotograflar: mevcutFotograflar, esyaListesi: mevcutEsyaListesi } = route.params;
+  const { type, title, formData: mevcutFormData, kayitId, fotograflar: mevcutFotograflar, esyaListesi: mevcutEsyaListesi, kiraciPersonId: mevcutKiraciPersonId } = route.params;
   const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState<Record<string, string>>(mevcutFormData || {});
   const [loading, setLoading] = useState(false);
   const [fotograflar, setFotograflar] = useState<Record<string, string>>(mevcutFotograflar ?? {});
   const [esyaListesi, setEsyaListesi] = useState<{ ad: string; marka: string; adet: string }[]>(mevcutEsyaListesi ?? []);
   const [yeniEsya, setYeniEsya] = useState({ ad: '', marka: '', adet: '1' });
+  const [kiraciPersonId, setKiraciPersonId] = useState<string | null>(mevcutKiraciPersonId ?? null);
+  const [personPickerVisible, setPersonPickerVisible] = useState(false);
 
   const kefilVar = formData.kefil_var === 'Evet';
   const kefilSayisi = parseInt(formData.kefil_sayisi || '1');
@@ -70,7 +73,7 @@ export default function FormScreen({ navigation, route }: any) {
     try {
       const { sozlesmeOlustur } = await import('../services/anthropic');
       const sozlesme = await sozlesmeOlustur(title, formData);
-      navigation.navigate('Preview', { sozlesme, title, formData, kayitId, ozelMaddeler: [], fotograflar, esyaListesi });
+      navigation.navigate('Preview', { sozlesme, title, formData, kayitId, ozelMaddeler: [], fotograflar, esyaListesi, kiraciPersonId });
     } catch (e: any) {
       alert('Hata: ' + (e?.message || JSON.stringify(e)));
     } finally {
@@ -113,9 +116,31 @@ export default function FormScreen({ navigation, route }: any) {
         </View>
       </View>
       <ScrollView style={styles.content} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled">
+        <PersonPicker
+          visible={personPickerVisible}
+          onClose={() => setPersonPickerVisible(false)}
+          onSelect={(p) => {
+            setFormData(prev => ({
+              ...prev,
+              kiraci_ad: p.ad_soyad ?? '',
+              kiraci_tc: p.tc_kimlik ?? '',
+              kiraci_adres: p.adres ?? '',
+              kiraci_tel: p.telefon ?? '',
+            }));
+            setKiraciPersonId(p.id);
+          }}
+        />
         {KIRA_FIELDS.map((section) => (
           <View key={section.section} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.section}</Text>
+            {section.section === 'KİRACI' && (
+              <TouchableOpacity
+                style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+                onPress={() => setPersonPickerVisible(true)}
+              >
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>Kayıtlı kiracıdan seç</Text>
+              </TouchableOpacity>
+            )}
             {section.fields.map((field, idx) => (
               <React.Fragment key={field.key}>
                 <View style={[styles.fieldRow, idx === section.fields.length - 1 && !( field.key === 'depozito') && { borderBottomWidth: 0 }]}>

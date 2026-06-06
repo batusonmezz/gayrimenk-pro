@@ -11,6 +11,7 @@ export default function PreviewScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const fotograflar = route.params?.fotograflar || {};
   const esyaListesi: { ad: string; marka: string; adet: string }[] = route.params?.esyaListesi || [];
+  const kiraciPersonId: string | null = route.params?.kiraciPersonId ?? null;
   const esyaVar = formData?.simdiki_durum === 'Eşyalı' && esyaListesi.length > 0;
   const [currentSozlesme, setCurrentSozlesme] = useState(sozlesme);
   const [ozelMaddeler, setOzelMaddeler] = useState<string[]>(
@@ -67,7 +68,7 @@ export default function PreviewScreen({ navigation, route }: any) {
         setTimeout(() => { yeniPencere.print(); }, 500);
       }
       if (kayitId) {
-        await sozlesmeGuncelle(kayitId, formData, JSON.stringify(ozelMaddeler), ozelMaddeler, genelMaddeler, fotograflar, esyaListesi);
+        await sozlesmeGuncelle(kayitId, formData, JSON.stringify(ozelMaddeler), ozelMaddeler, genelMaddeler, fotograflar, esyaListesi, kiraciPersonId);
       } else {
         await sozlesmeKaydet({
           tur: title,
@@ -80,6 +81,7 @@ export default function PreviewScreen({ navigation, route }: any) {
           genelMaddeler,
           fotograflar,
           esyaListesi,
+          kiraci_person_id: kiraciPersonId,
         });
       }
       navigation.navigate('Home');
@@ -90,7 +92,7 @@ export default function PreviewScreen({ navigation, route }: any) {
       const { uri } = await Print.printToFileAsync({ html });
       await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
       if (kayitId) {
-        await sozlesmeGuncelle(kayitId, formData, JSON.stringify(ozelMaddeler), ozelMaddeler, genelMaddeler, fotograflar, esyaListesi);
+        await sozlesmeGuncelle(kayitId, formData, JSON.stringify(ozelMaddeler), ozelMaddeler, genelMaddeler, fotograflar, esyaListesi, kiraciPersonId);
       } else {
         await sozlesmeKaydet({
           tur: title,
@@ -103,6 +105,7 @@ export default function PreviewScreen({ navigation, route }: any) {
           genelMaddeler,
           fotograflar,
           esyaListesi,
+          kiraci_person_id: kiraciPersonId,
         });
       }
       navigation.navigate('Home');

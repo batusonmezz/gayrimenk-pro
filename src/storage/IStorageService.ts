@@ -10,7 +10,8 @@ export interface IStorageService {
     ozelMaddeler?: string[],
     genelMaddeler?: string[],
     fotograflar?: Record<string, string>,
-    esyaListesi?: { ad: string; marka: string; adet: string }[]
+    esyaListesi?: { ad: string; marka: string; adet: string }[],
+    kiraciPersonId?: string | null
   ): Promise<void>;
   sozlesmeSil(id: string): Promise<void>;
 }
