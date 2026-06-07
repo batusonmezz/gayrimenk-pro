@@ -151,6 +151,20 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={styles.cardArrow}>›</Text>
           </TouchableOpacity>
         )}
+        {isEmlakci && (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('Kisiler')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cardIcon}>👥</Text>
+            <View style={styles.cardText}>
+              <Text style={styles.cardTitle}>Kişiler</Text>
+              <Text style={styles.cardDesc}>Kiracı ve mal sahibi kişi yönetimi</Text>
+            </View>
+            <Text style={styles.cardArrow}>›</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
