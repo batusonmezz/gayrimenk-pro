@@ -41,10 +41,12 @@ export class HybridStorageService implements IStorageService {
     genelMaddeler?: string[],
     fotograflar?: Record<string, string>,
     esyaListesi?: { ad: string; marka: string; adet: string }[],
-    kiraciPersonId?: string | null
+    kiraciPersonId?: string | null,
+    buildingId?: string | null,
+    malSahibiPersonId?: string | null
   ): Promise<void> {
     try {
-      await this.cloud.sozlesmeGuncelle(id, formData, sozlesmeMetni, ozelMaddeler, genelMaddeler, fotograflar, esyaListesi, kiraciPersonId);
+      await this.cloud.sozlesmeGuncelle(id, formData, sozlesmeMetni, ozelMaddeler, genelMaddeler, fotograflar, esyaListesi, kiraciPersonId, buildingId, malSahibiPersonId);
       console.log('[storage] Cloud güncelleme başarılı:', id);
     } catch (e) {
       console.warn('[storage] Cloud güncelleme başarısız, lokal güncelleniyor:', e);

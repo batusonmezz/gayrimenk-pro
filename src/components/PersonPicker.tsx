@@ -8,6 +8,9 @@ type PersonRow = {
   tc_kimlik: string | null;
   telefon: string | null;
   adres: string | null;
+  odeme_bilgisi?: string | null;
+  kimlik_foto_url?: string | null;
+  kimlik_foto_arka_url?: string | null;
 };
 
 type Props = {
@@ -84,7 +87,20 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={s.row}
-                onPress={() => { onSelect(item); onClose(); }}
+                onPress={async () => {
+                  // Seçim anında foto + banka bilgisini ayrı sorguyla çek (liste MB'larca base64 yüklemesin)
+                  try {
+                    const { data: extra } = await supabase
+                      .from('persons')
+                      .select('odeme_bilgisi, kimlik_foto_url, kimlik_foto_arka_url')
+                      .eq('id', item.id)
+                      .single();
+                    onSelect({ ...item, ...(extra ?? {}) });
+                  } catch {
+                    onSelect(item);
+                  }
+                  onClose();
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={s.name}>{item.ad_soyad}</Text>

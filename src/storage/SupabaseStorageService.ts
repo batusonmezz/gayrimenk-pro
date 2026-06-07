@@ -55,6 +55,68 @@ export class SupabaseStorageService implements IStorageService {
     }
   }
 
+  private async upsertMalSahibiPerson(
+    orgId: string,
+    data: {
+      ad?: string; tc?: string; adres?: string; tel?: string;
+      odemeBilgisi?: string;
+      kimlikFotoOn?: string;
+      kimlikFotoArka?: string;
+    },
+    existingPersonId?: string | null
+  ): Promise<string | null> {
+    try {
+      if (existingPersonId) return existingPersonId;
+      const ad = data.ad?.trim() ?? '';
+      if (!ad) return null;
+      const tcClean = data.tc?.trim() || null;
+
+      if (tcClean) {
+        const { data: existing } = await supabase
+          .from('persons')
+          .select('id')
+          .eq('organization_id', orgId)
+          .eq('tc_kimlik', tcClean)
+          .maybeSingle();
+        if (existing?.id) {
+          // Dedup: yalnızca dolu alanları güncelle — boş değerle ezme
+          const patch: Record<string, string> = {};
+          if (ad)                  patch.ad_soyad              = ad;
+          if (data.tel?.trim())    patch.telefon               = data.tel.trim();
+          if (data.adres?.trim())  patch.adres                 = data.adres.trim();
+          if (data.odemeBilgisi?.trim()) patch.odeme_bilgisi   = data.odemeBilgisi.trim();
+          if (data.kimlikFotoOn?.trim()) patch.kimlik_foto_url  = data.kimlikFotoOn.trim();
+          if (data.kimlikFotoArka?.trim()) patch.kimlik_foto_arka_url = data.kimlikFotoArka.trim();
+          if (Object.keys(patch).length > 0) {
+            await supabase.from('persons').update(patch).eq('id', existing.id as string);
+          }
+          return existing.id as string;
+        }
+      }
+
+      const insert: Record<string, string | null> = {
+        organization_id: orgId,
+        ad_soyad: ad,
+        tc_kimlik: tcClean,
+        telefon: data.tel?.trim() || null,
+        adres: data.adres?.trim() || null,
+        odeme_bilgisi: data.odemeBilgisi?.trim() || null,
+        kimlik_foto_url: data.kimlikFotoOn?.trim() || null,
+        kimlik_foto_arka_url: data.kimlikFotoArka?.trim() || null,
+      };
+      const { data: inserted, error } = await supabase
+        .from('persons')
+        .insert(insert)
+        .select('id')
+        .single();
+      if (error) { console.warn('[persons] mal_sahibi insert hata:', error); return null; }
+      return inserted.id as string;
+    } catch (e) {
+      console.warn('[persons] mal_sahibi upsert hata:', e);
+      return null;
+    }
+  }
+
   async sozlesmeKaydet(kayit: Omit<SozlesmeKayit, 'id' | 'tarih'>): Promise<string> {
     const tarih = new Date().toLocaleDateString('tr-TR');
     const organizationId = getOrganizationId();
@@ -64,6 +126,20 @@ export class SupabaseStorageService implements IStorageService {
       organizationId,
       { ad: kayit.formData.kiraci_ad, tc: kayit.formData.kiraci_tc, adres: kayit.formData.kiraci_adres, tel: kayit.formData.kiraci_tel },
       kayit.kiraci_person_id
+    );
+
+    const resolvedMalSahibiId = await this.upsertMalSahibiPerson(
+      organizationId,
+      {
+        ad: kayit.formData.kiraya_veren_ad,
+        tc: kayit.formData.kiraya_veren_tc,
+        adres: kayit.formData.kiraya_veren_adres,
+        tel: kayit.formData.kiraya_veren_tel,
+        odemeBilgisi: kayit.formData.odeme_sekli,
+        kimlikFotoOn: kayit.fotograflar?.kirayanOn,
+        kimlikFotoArka: kayit.fotograflar?.kirayanArka,
+      },
+      kayit.mal_sahibi_person_id
     );
 
     const { data: contract, error: contractError } = await supabase
@@ -80,6 +156,8 @@ export class SupabaseStorageService implements IStorageService {
         genel_maddeler: kayit.genelMaddeler ?? [],
         organization_id: organizationId,
         kiraci_person_id: resolvedPersonId ?? null,
+        building_id: kayit.building_id ?? null,
+        mal_sahibi_person_id: resolvedMalSahibiId ?? null,
       })
       .select('id')
       .single();
@@ -159,6 +237,8 @@ export class SupabaseStorageService implements IStorageService {
           Object.keys(photoRecord).length > 0 ? photoRecord : undefined,
         esyaListesi: items.length > 0 ? items : undefined,
         kiraci_person_id: (row.kiraci_person_id as string | null) ?? null,
+        building_id: (row.building_id as string | null) ?? null,
+        mal_sahibi_person_id: (row.mal_sahibi_person_id as string | null) ?? null,
       };
     });
   }
@@ -171,7 +251,9 @@ export class SupabaseStorageService implements IStorageService {
     genelMaddeler?: string[],
     fotograflar?: Record<string, string>,
     esyaListesi?: { ad: string; marka: string; adet: string }[],
-    kiraciPersonId?: string | null
+    kiraciPersonId?: string | null,
+    buildingId?: string | null,
+    malSahibiPersonId?: string | null
   ): Promise<void> {
     const orgId =
       getOrganizationId() ??
@@ -186,6 +268,22 @@ export class SupabaseStorageService implements IStorageService {
         )
       : null;
 
+    const resolvedMalSahibiPersonId = orgId
+      ? await this.upsertMalSahibiPerson(
+          orgId,
+          {
+            ad: formData.kiraya_veren_ad,
+            tc: formData.kiraya_veren_tc,
+            adres: formData.kiraya_veren_adres,
+            tel: formData.kiraya_veren_tel,
+            odemeBilgisi: formData.odeme_sekli,
+            kimlikFotoOn: fotograflar?.kirayanOn,
+            kimlikFotoArka: fotograflar?.kirayanArka,
+          },
+          malSahibiPersonId
+        )
+      : null;
+
     const { error: contractError } = await supabase
       .from('contracts')
       .update({
@@ -197,6 +295,8 @@ export class SupabaseStorageService implements IStorageService {
         ozel_maddeler: ozelMaddeler ?? [],
         genel_maddeler: genelMaddeler ?? [],
         kiraci_person_id: resolvedPersonId ?? kiraciPersonId ?? null,
+        building_id: buildingId ?? null,
+        mal_sahibi_person_id: resolvedMalSahibiPersonId ?? malSahibiPersonId ?? null,
       })
       .eq('id', id);
 

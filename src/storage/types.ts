@@ -12,4 +12,6 @@ export interface SozlesmeKayit {
   fotograflar?: Record<string, string>;
   esyaListesi?: { ad: string; marka: string; adet: string }[];
   kiraci_person_id?: string | null;
+  building_id?: string | null;
+  mal_sahibi_person_id?: string | null;
 }

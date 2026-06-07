@@ -104,7 +104,6 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - `onaylayan_user_id` + `odeme_tarihi` yazımı (RPC ile)
 
 **Açık borçlar:**
-- Fotoğraflar düzenlemede görünmüyor (veri korunuyor, sadece FormScreen UI — ayrı faz)
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
 - OdemeTakipScreen.tsx:71 — .finally PromiseLike üzerinde (3.5b'den kalma), latent tsc hatası + runtime riski; ileride düzelt, 2a scope dışı.
@@ -158,7 +157,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 ### Aşamalı implementasyon
 1. ✅ Migration 008 — uygulandı + doğrulandı (3 tablo, 12 policy, eski sözleşmeler bozulmadı, 06.06)
 2a. ✅ Kiracı kişisi — PersonPicker + persons upsert + contracts.kiraci_person_id bağlama. tsc temiz (2a'dan 0 hata), 4 senaryo cihazda geçti (07.06).
-2b. ⏳ Mal sahibi + bina + daire — KARAR BEKLİYOR: Model A (önce portföy/yönetim ekranı: Şehmuz + bina + 36 daire bir kez kurulur, sözleşme daireyi seçer) vs Model B (sözleşmeyle birikme). Batu Model A'ya eğilimli — yarın netleşecek. Altyapı (PersonPicker, persons, upsert) 2a'da hazır.
+2b. ✅ Site + Mal Sahibi entegrasyonu — Migration 009 (persons banka/arka foto, buildings adres, contracts building_id+mal_sahibi_person_id), SitelerScreen (liste + ekle/düzenle/sil), site picker (adres aynen) + mal sahibi picker (kiraya veren+banka+ön/arka foto otomatik), mal sahibi otomatik yakalama (coalesce wipe-guard), edit rehydration + wipe-guard, KimlikFoto initialOn/initialArka (edit modu + picker sonrası thumbnail). tsc temiz, cihazda test edildi (07.06).
 3. MalSahibiScreen persons/units'ten okuma
 4. (Ayrı) B4: gerçek Storage bucket — kimlik foto reuse için
 5. (Ayrı/sonra) Eski form_data → persons/units backfill (elle onaylı)

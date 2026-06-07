@@ -1,20 +1,26 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 interface Props {
   label: string;
   onFotoSecildi: (on: string, arka: string) => void;
+  initialOn?: string;
+  initialArka?: string;
 }
 
-export default function KimlikFoto({ label, onFotoSecildi }: Props) {
-  const [on, setOn] = useState('');
-  const [arka, setArka] = useState('');
+export default function KimlikFoto({ label, onFotoSecildi, initialOn, initialArka }: Props) {
+  const [on, setOn] = useState(initialOn ?? '');
+  const [arka, setArka] = useState(initialArka ?? '');
   const [yukleniyor, setYukleniyor] = useState(false);
 
   // Ref'ler stale closure'u önler: async işlem biterken en güncel değerleri okur
-  const onRef = useRef('');
-  const arkaRef = useRef('');
+  const onRef = useRef(initialOn ?? '');
+  const arkaRef = useRef(initialArka ?? '');
+
+  // edit modu / mal sahibi picker sonrası dışarıdan gelen değerleri al (asla boşla ezme)
+  useEffect(() => { if (initialOn)   { onRef.current   = initialOn;   setOn(initialOn);     } }, [initialOn]);
+  useEffect(() => { if (initialArka) { arkaRef.current = initialArka; setArka(initialArka); } }, [initialArka]);
 
   const secFoto = useCallback(async (taraf: 'on' | 'arka') => {
     setYukleniyor(true);

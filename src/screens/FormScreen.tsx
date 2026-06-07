@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import KimlikFoto from '../components/KimlikFoto';
 import PersonPicker from '../components/PersonPicker';
+import { supabase } from '../storage/supabaseClient';
 
 const KIRA_FIELDS = [
   { section: 'TAŞINMAZ BİLGİLERİ', fields: [
@@ -37,8 +38,26 @@ const KIRA_FIELDS = [
   ]},
 ];
 
+type Building = {
+  id: string;
+  ad: string;
+  il_ilce: string | null;
+  mahalle: string | null;
+  cadde_sokak: string | null;
+  kapi_no: string | null;
+};
+
 export default function FormScreen({ navigation, route }: any) {
-  const { type, title, formData: mevcutFormData, kayitId, fotograflar: mevcutFotograflar, esyaListesi: mevcutEsyaListesi, kiraciPersonId: mevcutKiraciPersonId } = route.params;
+  const {
+    type, title,
+    formData: mevcutFormData,
+    kayitId,
+    fotograflar: mevcutFotograflar,
+    esyaListesi: mevcutEsyaListesi,
+    kiraciPersonId: mevcutKiraciPersonId,
+    buildingId: mevcutBuildingId,
+    malSahibiPersonId: mevcutMalSahibiPersonId,
+  } = route.params;
   const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState<Record<string, string>>(mevcutFormData || {});
   const [loading, setLoading] = useState(false);
@@ -46,7 +65,13 @@ export default function FormScreen({ navigation, route }: any) {
   const [esyaListesi, setEsyaListesi] = useState<{ ad: string; marka: string; adet: string }[]>(mevcutEsyaListesi ?? []);
   const [yeniEsya, setYeniEsya] = useState({ ad: '', marka: '', adet: '1' });
   const [kiraciPersonId, setKiraciPersonId] = useState<string | null>(mevcutKiraciPersonId ?? null);
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(mevcutBuildingId ?? null);
+  const [selectedMalSahibiPersonId, setSelectedMalSahibiPersonId] = useState<string | null>(mevcutMalSahibiPersonId ?? null);
   const [personPickerVisible, setPersonPickerVisible] = useState(false);
+  const [malSahibiPickerVisible, setMalSahibiPickerVisible] = useState(false);
+  const [sitePickerVisible, setSitePickerVisible] = useState(false);
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [buildingsLoading, setBuildingsLoading] = useState(false);
 
   const kefilVar = formData.kefil_var === 'Evet';
   const kefilSayisi = parseInt(formData.kefil_sayisi || '1');
@@ -73,11 +98,31 @@ export default function FormScreen({ navigation, route }: any) {
     try {
       const { sozlesmeOlustur } = await import('../services/anthropic');
       const sozlesme = await sozlesmeOlustur(title, formData);
-      navigation.navigate('Preview', { sozlesme, title, formData, kayitId, ozelMaddeler: [], fotograflar, esyaListesi, kiraciPersonId });
+      navigation.navigate('Preview', {
+        sozlesme, title, formData, kayitId,
+        ozelMaddeler: [], fotograflar, esyaListesi,
+        kiraciPersonId,
+        buildingId: selectedBuildingId,
+        malSahibiPersonId: selectedMalSahibiPersonId,
+      });
     } catch (e: any) {
       alert('Hata: ' + (e?.message || JSON.stringify(e)));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSitePickerAc = async () => {
+    setBuildingsLoading(true);
+    setSitePickerVisible(true);
+    try {
+      const { data } = await supabase
+        .from('buildings')
+        .select('id, ad, il_ilce, mahalle, cadde_sokak, kapi_no')
+        .order('ad');
+      setBuildings((data ?? []) as Building[]);
+    } finally {
+      setBuildingsLoading(false);
     }
   };
 
@@ -130,9 +175,96 @@ export default function FormScreen({ navigation, route }: any) {
             setKiraciPersonId(p.id);
           }}
         />
+
+        {/* Mal sahibi picker */}
+        <PersonPicker
+          visible={malSahibiPickerVisible}
+          onClose={() => setMalSahibiPickerVisible(false)}
+          onSelect={(p) => {
+            setSelectedMalSahibiPersonId(p.id);
+            setFormData(prev => ({
+              ...prev,
+              kiraya_veren_ad:    p.ad_soyad   ?? '',
+              kiraya_veren_tc:    p.tc_kimlik  ?? '',
+              kiraya_veren_adres: p.adres      ?? '',
+              kiraya_veren_tel:   p.telefon    ?? '',
+              odeme_sekli:        p.odeme_bilgisi ?? prev.odeme_sekli ?? '',
+            }));
+            setFotograflar(prev => ({
+              ...prev,
+              ...(p.kimlik_foto_url      ? { kirayanOn:   p.kimlik_foto_url }      : {}),
+              ...(p.kimlik_foto_arka_url ? { kirayanArka: p.kimlik_foto_arka_url } : {}),
+            }));
+          }}
+        />
+
+        {/* Site picker modal */}
+        <Modal visible={sitePickerVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSitePickerVisible(false)}>
+          <View style={{ flex: 1, backgroundColor: '#f5f5f0' }}>
+            <View style={{ backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' }}>Kayıtlı Site Seç</Text>
+              <TouchableOpacity onPress={() => setSitePickerVisible(false)} style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {buildingsLoading ? (
+              <ActivityIndicator style={{ marginTop: 40 }} color="#1a2e1a" />
+            ) : buildings.length === 0 ? (
+              <View style={{ alignItems: 'center', marginTop: 60 }}>
+                <Text style={{ fontSize: 14, color: '#888' }}>Kayıtlı site yok — önce Siteler ekranından ekleyin</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={buildings}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14 }}
+                    onPress={() => {
+                      setSelectedBuildingId(item.id);
+                      setFormData(prev => ({
+                        ...prev,
+                        il_ilce:     item.il_ilce     ?? '',
+                        mahalle:     item.mahalle      ?? '',
+                        cadde_sokak: item.cadde_sokak  ?? '',
+                        kapi_no:     item.kapi_no      ?? '',
+                      }));
+                      setSitePickerVisible(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: '500', color: '#1a1a1a' }}>{item.ad}</Text>
+                    {(item.il_ilce || item.mahalle) ? (
+                      <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                        {[item.il_ilce, item.mahalle].filter(Boolean).join(' · ')}
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={{ height: 0.5, backgroundColor: '#e0e0e0', marginHorizontal: 16 }} />}
+              />
+            )}
+          </View>
+        </Modal>
         {KIRA_FIELDS.map((section) => (
           <View key={section.section} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.section}</Text>
+            {section.section === 'TAŞINMAZ BİLGİLERİ' && (
+              <TouchableOpacity
+                style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+                onPress={handleSitePickerAc}
+              >
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>Kayıtlı siteden seç</Text>
+              </TouchableOpacity>
+            )}
+            {section.section === 'KİRAYA VEREN' && (
+              <TouchableOpacity
+                style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+                onPress={() => setMalSahibiPickerVisible(true)}
+              >
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>Kayıtlı mal sahibinden seç</Text>
+              </TouchableOpacity>
+            )}
             {section.section === 'KİRACI' && (
               <TouchableOpacity
                 style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
@@ -427,21 +559,29 @@ export default function FormScreen({ navigation, route }: any) {
           <KimlikFoto
             label="Kiraya Veren Kimlik"
             onFotoSecildi={onFotoKirayanSecildi}
+            initialOn={fotograflar.kirayanOn}
+            initialArka={fotograflar.kirayanArka}
           />
           <KimlikFoto
             label="Kiracı Kimlik"
             onFotoSecildi={onFotoKiraciSecildi}
+            initialOn={fotograflar.kiraciOn}
+            initialArka={fotograflar.kiraciArka}
           />
           {kefilVar && kefilSayisi >= 1 && (
             <KimlikFoto
               label="1. Kefil Kimlik"
               onFotoSecildi={onFotoKefil1Secildi}
+              initialOn={fotograflar.kefil1On}
+              initialArka={fotograflar.kefil1Arka}
             />
           )}
           {kefilVar && kefilSayisi >= 2 && (
             <KimlikFoto
               label="2. Kefil Kimlik"
               onFotoSecildi={onFotoKefil2Secildi}
+              initialOn={fotograflar.kefil2On}
+              initialArka={fotograflar.kefil2Arka}
             />
           )}
         </View>
