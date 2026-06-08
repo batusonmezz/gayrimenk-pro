@@ -7,7 +7,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
 import * as auth from './src/services/auth';
-import { setOrganizationId, setRole } from './src/services/authState';
+import { setOrganizationId, setRole, setMustChangePassword } from './src/services/authState';
+import ForcePasswordChangeScreen from './src/screens/ForcePasswordChangeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import FormScreen from './src/screens/FormScreen';
 import PreviewScreen from './src/screens/PreviewScreen';
@@ -31,25 +32,66 @@ const screenOptions = {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePasswordState] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+    let mounted = true;
+
+    const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
+      Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+
+    const bootstrap = async () => {
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession());
+        if (!mounted) return;
+        setSession(session);
+        if (session) {
+          try {
+            const user = await withTimeout(auth.getCurrentUser());
+            if (!mounted) return;
+            setOrganizationId(user?.organizationId ?? null);
+            setRole(user?.role ?? null);
+            setMustChangePasswordState(user?.mustChangePassword ?? false);
+          } catch {
+            console.warn('[App] bootstrap getCurrentUser hatasi - oturum korunuyor');
+          }
+        }
+      } catch {
+        if (!mounted) return;
+        setSession(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    bootstrap();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
       setSession(session);
-      if (event === 'INITIAL_SESSION' && session) {
-        const user = await auth.getCurrentUser();
-        setOrganizationId(user?.organizationId ?? null);
-        setRole(user?.role ?? null);
-      } else if (event === 'SIGNED_OUT') {
-        setOrganizationId(null);
+      try {
+        if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
+          const user = await withTimeout(auth.getCurrentUser());
+          if (!mounted) return;
+          setOrganizationId(user?.organizationId ?? null);
+          setRole(user?.role ?? null);
+          setMustChangePasswordState(user?.mustChangePassword ?? false);
+        } else if (event === 'SIGNED_OUT') {
+          setOrganizationId(null);
+          setMustChangePasswordState(false);
+          setMustChangePassword(false);
+        }
+      } catch {
+        console.warn('[App] onAuthStateChange getCurrentUser hatası');
+      } finally {
+        if (mounted) setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
@@ -67,7 +109,14 @@ export default function App() {
       <View style={{ flex: 1, height: '100vh' as any, overflow: 'auto' as any }}>
         <NavigationContainer>
           <Stack.Navigator screenOptions={screenOptions}>
-            {session ? (
+            {!session ? (
+              <>
+                <Stack.Screen name="Login"  component={LoginScreen} />
+                <Stack.Screen name="Signup" component={SignupScreen} />
+              </>
+            ) : mustChangePassword ? (
+              <Stack.Screen name="ForcePasswordChange" component={ForcePasswordChangeScreen} />
+            ) : (
               <>
                 <Stack.Screen name="Home"         component={HomeScreen} />
                 <Stack.Screen name="Form"         component={FormScreen} />
@@ -79,11 +128,6 @@ export default function App() {
                 <Stack.Screen name="OdemeTakip"  component={OdemeTakipScreen} />
                 <Stack.Screen name="Siteler"     component={SitelerScreen} />
                 <Stack.Screen name="Kisiler"     component={KisilerScreen} />
-              </>
-            ) : (
-              <>
-                <Stack.Screen name="Login"  component={LoginScreen} />
-                <Stack.Screen name="Signup" component={SignupScreen} />
               </>
             )}
           </Stack.Navigator>

@@ -164,7 +164,7 @@ Deno.serve(async (req: Request) => {
   // 10. users satırını doğru org + role ile düzelt
   const { error: fixErr } = await admin
     .from('users')
-    .update({ organization_id: callerData.organization_id, role })
+    .update({ organization_id: callerData.organization_id, role, must_change_password: true })
     .eq('id', newUserId)
 
   if (fixErr) {

@@ -1,11 +1,12 @@
 import { supabase } from '../storage/supabaseClient';
-import { setOrganizationId, setRole, setEmail } from './authState';
+import { setOrganizationId, setRole, setEmail, setMustChangePassword } from './authState';
 import type { User } from '@supabase/supabase-js';
 
 export interface AuthUser {
   user: User;
   organizationId: string | null;
   role: string | null;
+  mustChangePassword: boolean;
 }
 
 export interface SignUpResult extends AuthUser {
@@ -27,12 +28,12 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   if (!authData.user) throw new Error('Kayıt tamamlanamadı.');
 
   if (authData.session === null) {
-    return { user: authData.user, organizationId: null, role: null, needsEmailConfirmation: true };
+    return { user: authData.user, organizationId: null, role: null, mustChangePassword: false, needsEmailConfirmation: true };
   }
 
   const { data: userRecord, error: userFetchError } = await supabase
     .from('users')
-    .select('organization_id, role')
+    .select('organization_id, role, must_change_password')
     .eq('id', authData.user.id)
     .single();
 
@@ -47,7 +48,8 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   setOrganizationId(orgId);
   setRole(userRole);
   setEmail(authData.user.email ?? null);
-  return { user: authData.user, organizationId: orgId, role: userRole, needsEmailConfirmation: false };
+  setMustChangePassword(false);
+  return { user: authData.user, organizationId: orgId, role: userRole, mustChangePassword: false, needsEmailConfirmation: false };
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -57,16 +59,18 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id, role')
+    .select('organization_id, role, must_change_password')
     .eq('id', data.user.id)
     .single();
 
   const orgId = userRecord?.organization_id ?? null;
   const userRole = userRecord?.role ?? null;
+  const mustChangePw = userRecord?.must_change_password ?? false;
   setOrganizationId(orgId);
   setRole(userRole);
   setEmail(data.user.email ?? null);
-  return { user: data.user, organizationId: orgId, role: userRole };
+  setMustChangePassword(mustChangePw);
+  return { user: data.user, organizationId: orgId, role: userRole, mustChangePassword: mustChangePw };
 }
 
 export async function signOut(): Promise<void> {
@@ -83,7 +87,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id, role')
+    .select('organization_id, role, must_change_password')
     .eq('id', user.id)
     .single();
 
@@ -92,9 +96,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 
   const userRole = userRecord?.role ?? null;
+  const mustChangePw = userRecord?.must_change_password ?? false;
   setRole(userRole);
   setEmail(user.email ?? null);
-  return { user, organizationId: userRecord?.organization_id ?? null, role: userRole };
+  setMustChangePassword(mustChangePw);
+  return { user, organizationId: userRecord?.organization_id ?? null, role: userRole, mustChangePassword: mustChangePw };
 }
 
 export async function getSession(): Promise<boolean> {

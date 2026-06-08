@@ -10,3 +10,7 @@ export function getRole(): string | null { return _role; }
 
 export function setEmail(email: string | null): void { _email = email; }
 export function getEmail(): string | null { return _email; }
+
+let _mustChangePassword: boolean = false;
+export function setMustChangePassword(v: boolean): void { _mustChangePassword = v; }
+export function getMustChangePassword(): boolean { return _mustChangePassword; }

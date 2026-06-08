@@ -30,8 +30,10 @@ export default function LoginScreen({ navigation }: Props) {
     setLoading(true);
     setError('');
     try {
-      await signIn(email.trim(), password);
-      navigation.replace('Home');
+      const user = await signIn(email.trim(), password);
+      if (!user.mustChangePassword) {
+        navigation.replace('Home');
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
