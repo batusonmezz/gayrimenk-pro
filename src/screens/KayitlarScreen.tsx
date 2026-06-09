@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { sozlesmeleriGetir, sozlesmeSil, SozlesmeKayit } from '../services/storage';
 import { getRole } from '../services/authState';
@@ -13,6 +14,7 @@ export default function KayitlarScreen({ navigation }: any) {
   const [odemeCount, setOdemeCount] = useState<Record<string, number>>({});
   const [rpcYukleniyor, setRpcYukleniyor] = useState<string | null>(null);
 
+  const insets = useSafeAreaInsets();
   const isEmlakci = role === 'emlakci';
 
   // Rol: cache'ten hızlı yükle, soğuk başlangıçta async çöz
@@ -94,7 +96,7 @@ export default function KayitlarScreen({ navigation }: any) {
         <Text style={styles.count}>{kayitlar.length} adet</Text>
       </View>
 
-      <ScrollView style={styles.content} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
         {yukleniyor ? (
           <View style={styles.empty}>
             <ActivityIndicator size="large" color="#0f6e56" />
