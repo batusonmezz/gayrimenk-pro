@@ -79,6 +79,12 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Sıfır migration, versionCode değişmedi
 - **Test edildi:** emlakçı 12 satır + özet, kiraci/mal_sahibi RLS gerçek-auth, gecikti/bugün/ödendi ayrımı, taraflarda "Oluştur" yok
 
+**Faz 3.5c-1 — Payments depozito desteği** (10.06.2026)
+- Migration `012_depozito.sql`: `tip` kolonu (`kira`|`depozito`), `donem`/`vade_tarihi`/`tutar_kurus` nullable, `tutar_kurus` CHECK yenilendi (NULL OR > 0), kontrat başına tek depozito partial unique index, mevcut sözleşmeler backfill
+- `create_payment_schedule` güncellendi: 12 kira satırı + 1 depozito satırı oluşturur
+- `OdemeTakipScreen`: `tip` kolonu çekilir; depozito satırı kira listesinin üstünde ayrı `hesaplaDepozitoDurum` helper ile gösterilir; özet kart sadece kiralardan hesaplanır (NaN riski yok)
+- `KayitlarScreen`: `useSafeAreaInsets` — son kartın Android nav çubuğu arkasında kalması giderildi
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
@@ -95,9 +101,9 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
-**Faz 3.5c — Dekont yükleme (SONRAKİ):**
-- Ödeme satırına dekont fotoğrafı ekleme (Storage upload → `dekont_url`)
-- OdemeTakipScreen'de dekont önizleme
+**Faz 3.5c-2 — Dekont yükleme (SONRAKİ):**
+- `upload_dekont` RPC: kiraci dekont fotoğrafı → base64 yükleme → `dekont_url` yazımı
+- OdemeTakipScreen'de "Dekontu Gör" önizleme (kiraci yükler, emlakci görür)
 
 **Faz 3.5d — Durum değiştirme:**
 - Emlakçı: ödeme satırını `odendi` / `reddedildi` olarak işaretleme
@@ -106,7 +112,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
-- OdemeTakipScreen.tsx:71 — .finally PromiseLike üzerinde (3.5b'den kalma), latent tsc hatası + runtime riski; ileride düzelt, 2a scope dışı.
+- OdemeTakipScreen.tsx:87 — .finally PromiseLike üzerinde (3.5b'den kalma), latent tsc hatası + runtime riski; ileride düzelt, 2a scope dışı.
 
 **Ertelenmiş:**
 - **Faz 3.3** — Davet sistemi: `inviteUserByEmail` + SMTP
@@ -179,4 +185,4 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
   Trigger zaten `needsEmailConfirmation` durumunu handle ediyor — sorun olmayacak.
 - **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
 - **AI:** Claude Sonnet 4.6 via Supabase Edge Function proxy (+ direct fallback)
-- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 (hepsi Supabase'de çalıştırıldı)
+- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 (hepsi Supabase'de çalıştırıldı)

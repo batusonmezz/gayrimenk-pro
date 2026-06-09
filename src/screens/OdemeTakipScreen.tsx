@@ -5,9 +5,10 @@ import { supabase } from '../storage/supabaseClient';
 
 type Payment = {
   id: string;
-  donem: string;
-  tutar_kurus: number;
-  vade_tarihi: string;
+  tip: string;
+  donem: string | null;
+  tutar_kurus: number | null;
+  vade_tarihi: string | null;
   durum: string;
 };
 
@@ -34,10 +35,16 @@ function formatTL(kurus: number): string {
   return `${tl.toLocaleString('tr-TR')},${krs} ₺`;
 }
 
+function hesaplaDepozitoDurum(durum: string): { label: string; renk: string } {
+  if (durum === 'odendi')     return { label: 'Onaylandı',  renk: '#27ae60' };
+  if (durum === 'reddedildi') return { label: 'Reddedildi', renk: '#7f8c8d' };
+  return { label: 'Bekliyor', renk: '#f39c12' };
+}
+
 function hesaplaEtiket(p: Payment, bugun: Date): { label: string; renk: string } {
   if (p.durum === 'odendi') return { label: 'Ödendi', renk: '#27ae60' };
   if (p.durum === 'reddedildi') return { label: 'Reddedildi', renk: '#7f8c8d' };
-  const vade = parseYerelTarih(p.vade_tarihi);
+  const vade = parseYerelTarih(p.vade_tarihi!);
   return vade < bugun ? { label: 'Gecikti', renk: '#e74c3c' } : { label: 'Bekliyor', renk: '#f39c12' };
 }
 
@@ -53,12 +60,21 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
     return d;
   }, []);
 
+  const depozito = useMemo(
+    () => odemeler.find(p => p.tip === 'depozito') ?? null,
+    [odemeler]
+  );
+  const kiralar = useMemo(
+    () => odemeler.filter(p => p.tip === 'kira'),
+    [odemeler]
+  );
+
   useFocusEffect(useCallback(() => {
     setYukleniyor(true);
     setHata(null);
     supabase
       .from('payments')
-      .select('id, donem, tutar_kurus, vade_tarihi, durum')
+      .select('id, tip, donem, tutar_kurus, vade_tarihi, durum')
       .eq('contract_id', contractId)
       .order('donem', { ascending: true })
       .then(({ data, error }) => {
@@ -75,13 +91,13 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
     let odendiSay = 0, bekliyorSay = 0, geciktiSay = 0;
     let odendiKurus = 0, toplamKurus = 0;
 
-    for (const p of odemeler) {
-      toplamKurus += p.tutar_kurus;
+    for (const p of kiralar) {
+      toplamKurus += p.tutar_kurus!;
       if (p.durum === 'odendi') {
         odendiSay++;
-        odendiKurus += p.tutar_kurus;
+        odendiKurus += p.tutar_kurus!;
       } else if (p.durum === 'beklemede') {
-        const vade = parseYerelTarih(p.vade_tarihi);
+        const vade = parseYerelTarih(p.vade_tarihi!);
         if (vade < bugun) {
           geciktiSay++;
         } else {
@@ -98,19 +114,19 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
       tahsilKurus: odendiKurus,
       kalanKurus: toplamKurus - odendiKurus,
     };
-  }, [odemeler, bugun]);
+  }, [kiralar, bugun]);
 
   const renderItem = ({ item }: { item: Payment }) => {
     const { label, renk } = hesaplaEtiket(item, bugun);
     return (
       <View style={styles.row}>
         <View style={styles.rowLeft}>
-          <Text style={styles.rowDonem}>{formatDonem(item.donem)}</Text>
-          <Text style={styles.rowVade}>Vade: {formatTarih(item.vade_tarihi)}</Text>
+          <Text style={styles.rowDonem}>{formatDonem(item.donem!)}</Text>
+          <Text style={styles.rowVade}>Vade: {formatTarih(item.vade_tarihi!)}</Text>
         </View>
         <View style={styles.rowRight}>
           <Text style={[styles.rowEtiket, { color: renk }]}>{label}</Text>
-          <Text style={styles.rowTutar}>{formatTL(item.tutar_kurus)}</Text>
+          <Text style={styles.rowTutar}>{formatTL(item.tutar_kurus!)}</Text>
         </View>
       </View>
     );
@@ -174,9 +190,24 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
           </View>
 
           <FlatList
-            data={odemeler}
+            data={kiralar}
             keyExtractor={item => item.id}
             renderItem={renderItem}
+            ListHeaderComponent={() => {
+              if (!depozito) return null;
+              const { label, renk } = hesaplaDepozitoDurum(depozito.durum);
+              return (
+                <View style={styles.depozitRow}>
+                  <View style={styles.rowLeft}>
+                    <Text style={styles.depozitLabel}>Depozito</Text>
+                    <Text style={styles.depozitAlt}>Detay sözleşmede</Text>
+                  </View>
+                  <View style={styles.rowRight}>
+                    <Text style={[styles.rowEtiket, { color: renk }]}>{label}</Text>
+                  </View>
+                </View>
+              );
+            }}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={true}
             style={{ flex: 1 }}
@@ -217,4 +248,7 @@ const styles = StyleSheet.create({
   rowRight: { alignItems: 'flex-end', gap: 4 },
   rowEtiket: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3 },
   rowTutar: { fontSize: 14, fontWeight: '500', color: '#333' },
+  depozitRow: { backgroundColor: '#eef4ff', borderRadius: 10, padding: 12, marginBottom: 6, flexDirection: 'row', alignItems: 'center', borderWidth: 0.5, borderColor: '#b3cdf5' },
+  depozitLabel: { fontSize: 14, fontWeight: '600', color: '#1a1a1a' },
+  depozitAlt: { fontSize: 11, color: '#aaa' },
 });
