@@ -89,6 +89,13 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Migration `013_dekont.sql`: `dekont_var` generated boolean kolon (`dekont_url IS NOT NULL STORED`) + `upload_dekont(p_payment_id, p_dekont)` RPC (SECURITY DEFINER; kiraci/emlakci yükleyebilir, onaylı ödeme korunur)
 - `OdemeTakipScreen`: `dekont_var` çekilir; kira + depozito satırlarına `dekontAksiyon` — "Dekont Yükle" (kiraci/emlakci, dekont yoksa) / "Dekontu Gör" (herkese, dekont varsa); modal: slide + pageSheet, base64 Image; optimistik güncelleme (refetch yok)
 
+**Faz 3.5c-2b — WebView dekont görüntüleme + PDF yükleme** (10.06.2026)
+- Migration `014_dekont_mime.sql`: `payments.dekont_mime TEXT` kolonu + `upload_dekont` 3-arg (`p_mime`) olarak yeniden oluşturuldu; `image/*` veya `application/pdf` zorunlu
+- `OdemeTakipScreen`: "Dekont Yükle" Alert menüsü → Fotoğraf (`expo-image-picker`) / PDF (`expo-document-picker` + `expo-file-system/legacy` base64) seçimi; `dekontGonder` ortak göndericiye `p_mime` eklendi
+- Dekont görüntüleme: `ScrollView+Image` → `WebView`; foto için inline HTML + `maximum-scale=6` pinch-zoom; PDF için pdf.js 3.11 canvas render (tüm sayfalar)
+- Yeni paketler: `react-native-webview`, `expo-document-picker`, `expo-dev-client`
+- tsc temiz (pre-existing `.finally` latent hatası hariç)
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
@@ -105,10 +112,6 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
-**Faz 3.5c-2b — Dekont zoom + olası PDF desteği (SONRAKİ):**
-- Dekontu Gör modalında pinch-to-zoom veya tam ekran görüntüleme
-- Dekontun PDF çıktısına eklenmesi (opsiyonel)
-
 **Faz 3.5d — Durum değiştirme:**
 - Emlakçı: ödeme satırını `odendi` / `reddedildi` olarak işaretleme
 - `onaylayan_user_id` + `odeme_tarihi` yazımı (RPC ile)
@@ -116,7 +119,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
-- OdemeTakipScreen.tsx:105 — .finally PromiseLike üzerinde (3.5b'den kalma), latent tsc hatası + runtime riski; ileride düzelt, 2a scope dışı.
+- OdemeTakipScreen.tsx:137 — .finally PromiseLike üzerinde (3.5b'den kalma), latent tsc hatası + runtime riski; ileride düzelt, 2a scope dışı.
 
 **Ertelenmiş:**
 - **Faz 3.3** — Davet sistemi: `inviteUserByEmail` + SMTP
@@ -189,4 +192,4 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
   Trigger zaten `needsEmailConfirmation` durumunu handle ediyor — sorun olmayacak.
 - **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
 - **AI:** Claude Sonnet 4.6 via Supabase Edge Function proxy (+ direct fallback)
-- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 (hepsi Supabase'de çalıştırıldı)
+- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 (hepsi Supabase'de çalıştırıldı)

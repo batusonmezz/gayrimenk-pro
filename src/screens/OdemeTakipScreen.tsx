@@ -1,10 +1,13 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Modal, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../storage/supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
 import { getRole } from '../services/authState';
 import { getCurrentUser } from '../services/auth';
+import { WebView } from 'react-native-webview';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 
 type Payment = {
   id: string;
@@ -52,6 +55,34 @@ function hesaplaEtiket(p: Payment, bugun: Date): { label: string; renk: string }
   return vade < bugun ? { label: 'Gecikti', renk: '#e74c3c' } : { label: 'Bekliyor', renk: '#f39c12' };
 }
 
+function dekontHtml(b64: string, mime: string | null): string {
+  const isPdf = mime === 'application/pdf';
+  if (!isPdf) {
+    const m = mime && mime.startsWith('image/') ? mime : 'image/jpeg';
+    return '<!DOCTYPE html><html><head>'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=6, user-scalable=yes">'
+      + '</head><body style="margin:0;background:#1a1a1a;display:flex;align-items:center;justify-content:center;min-height:100vh;">'
+      + '<img src="data:' + m + ';base64,' + b64 + '" style="max-width:100%;height:auto;" />'
+      + '</body></html>';
+  }
+  return '<!DOCTYPE html><html><head>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=6, user-scalable=yes">'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>'
+    + '</head><body style="margin:0;background:#1a1a1a;"><div id="c"></div><script>'
+    + 'pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";'
+    + 'var b64="' + b64 + '";var raw=atob(b64);var arr=new Uint8Array(raw.length);'
+    + 'for(var i=0;i<raw.length;i++){arr[i]=raw.charCodeAt(i);}'
+    + 'pdfjsLib.getDocument({data:arr}).promise.then(function(pdf){'
+    + 'var render=function(n){if(n>pdf.numPages)return;'
+    + 'pdf.getPage(n).then(function(page){var vp=page.getViewport({scale:2});'
+    + 'var cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;'
+    + 'cv.style.width="100%";cv.style.display="block";cv.style.marginBottom="8px";'
+    + 'document.getElementById("c").appendChild(cv);'
+    + 'page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise.then(function(){render(n+1);});});};'
+    + 'render(1);}).catch(function(e){document.body.innerHTML="<p style=\\"color:#fff;padding:20px;\\">PDF görüntülenemedi</p>";});'
+    + '</script></body></html>';
+}
+
 export default function OdemeTakipScreen({ navigation, route }: any) {
   const { contractId, baslik } = route.params as { contractId: string; baslik: string };
   const [odemeler, setOdemeler] = useState<Payment[]>([]);
@@ -62,6 +93,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   const [dekontModalId, setDekontModalId] = useState<string | null>(null);
   const [dekontBase64, setDekontBase64] = useState<string | null>(null);
   const [dekontYukleniyor, setDekontYukleniyor] = useState(false);
+  const [dekontMime, setDekontMime] = useState<string | null>(null);
 
   const bugun = useMemo(() => {
     const d = new Date();
@@ -105,36 +137,53 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
       .finally(() => setYukleniyor(false));
   }, [contractId]));
 
-  const handleDekontYukle = async (paymentId: string) => {
+  const handleDekontYukle = (paymentId: string) => {
+    Alert.alert('Dekont Yükle', 'Dosya türünü seçin', [
+      { text: 'Fotoğraf', onPress: () => dekontFotoSec(paymentId) },
+      { text: 'PDF / Dosya', onPress: () => dekontPdfSec(paymentId) },
+      { text: 'İptal', style: 'cancel' },
+    ]);
+  };
+
+  const dekontGonder = async (paymentId: string, base64: string, mime: string) => {
+    setYukleniyorId(paymentId);
+    try {
+      const { error } = await supabase.rpc('upload_dekont', {
+        p_payment_id: paymentId, p_dekont: base64, p_mime: mime,
+      });
+      if (error) throw error;
+      setOdemeler(prev => prev.map(p => p.id === paymentId
+        ? { ...p, dekont_var: true, durum: 'beklemede' } : p));
+      Alert.alert('Başarılı', 'Dekont yüklendi.');
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message ?? 'Dekont yüklenemedi.');
+    } finally { setYukleniyorId(null); }
+  };
+
+  const dekontFotoSec = async (paymentId: string) => {
     const izin = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!izin.granted) {
       Alert.alert('İzin gerekli', 'Fotoğraf seçmek için galeri izni gerekli.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      base64: true,
-      exif: false,
-      quality: 0.5,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, base64: true, exif: false, quality: 0.5,
     });
     if (result.canceled || !result.assets[0]?.base64) return;
-    const base64 = result.assets[0].base64;
-    setYukleniyorId(paymentId);
-    try {
-      const { error } = await supabase.rpc('upload_dekont', {
-        p_payment_id: paymentId,
-        p_dekont: base64,
-      });
-      if (error) throw error;
-      setOdemeler(prev =>
-        prev.map(p => p.id === paymentId ? { ...p, dekont_var: true, durum: 'beklemede' } : p)
-      );
-      Alert.alert('Başarılı', 'Dekont yüklendi.');
-    } catch (e: any) {
-      Alert.alert('Hata', e?.message ?? 'Dekont yüklenemedi.');
-    } finally {
-      setYukleniyorId(null);
-    }
+    const asset = result.assets[0];
+    await dekontGonder(paymentId, asset.base64!, asset.mimeType ?? 'image/jpeg');
+  };
+
+  const dekontPdfSec = async (paymentId: string) => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'application/pdf', copyToCacheDirectory: true,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    await dekontGonder(paymentId, base64, 'application/pdf');
   };
 
   const handleDekontGor = async (paymentId: string) => {
@@ -144,11 +193,12 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select('dekont_url')
+        .select('dekont_url, dekont_mime')
         .eq('id', paymentId)
         .single();
       if (error) throw error;
       setDekontBase64(data?.dekont_url ?? null);
+      setDekontMime(data?.dekont_mime ?? null);
     } catch (e: any) {
       Alert.alert('Hata', e?.message ?? 'Dekont yüklenemedi.');
       setDekontModalId(null);
@@ -318,35 +368,37 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
         visible={dekontModalId !== null}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => { setDekontModalId(null); setDekontBase64(null); }}
+        onRequestClose={() => { setDekontModalId(null); setDekontBase64(null); setDekontMime(null); }}
       >
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Dekont</Text>
             <TouchableOpacity
-              onPress={() => { setDekontModalId(null); setDekontBase64(null); }}
+              onPress={() => { setDekontModalId(null); setDekontBase64(null); setDekontMime(null); }}
               style={styles.closeBtn}
             >
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView style={styles.modalContent}>
+          <View style={styles.modalContent}>
             {dekontYukleniyor ? (
               <View style={styles.center}>
                 <ActivityIndicator size="large" color="#0f6e56" />
               </View>
             ) : dekontBase64 ? (
-              <Image
-                source={{ uri: `data:image/jpeg;base64,${dekontBase64}` }}
-                style={styles.dekontImage}
-                resizeMode="contain"
+              <WebView
+                originWhitelist={['*']}
+                javaScriptEnabled
+                domStorageEnabled
+                source={{ html: dekontHtml(dekontBase64, dekontMime) }}
+                style={styles.dekontWeb}
               />
             ) : (
               <View style={styles.center}>
                 <Text style={styles.bosText}>Dekont bulunamadı</Text>
               </View>
             )}
-          </ScrollView>
+          </View>
         </View>
       </Modal>
     </View>
@@ -397,5 +449,5 @@ const styles = StyleSheet.create({
   closeBtn:        { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   closeText:       { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
   modalContent:    { flex: 1 },
-  dekontImage:     { width: '100%', height: 480 },
+  dekontWeb:       { flex: 1, backgroundColor: '#1a1a1a' },
 });
