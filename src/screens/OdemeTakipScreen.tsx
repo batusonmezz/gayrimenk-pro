@@ -207,25 +207,66 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
     }
   };
 
+  const odemeDurumDegistir = async (paymentId: string, rpc: 'approve_payment' | 'reject_payment', yeniDurum: string) => {
+    setYukleniyorId(paymentId);
+    try {
+      const { error } = await supabase.rpc(rpc, { p_payment_id: paymentId });
+      if (error) throw error;
+      setOdemeler(prev => prev.map(p => p.id === paymentId ? { ...p, durum: yeniDurum } : p));
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message ?? 'İşlem başarısız.');
+    } finally { setYukleniyorId(null); }
+  };
+
+  const handleOnayla = (paymentId: string) => {
+    Alert.alert('Onayla', 'Bu ödemeyi onaylıyor musunuz?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Onayla', onPress: () => odemeDurumDegistir(paymentId, 'approve_payment', 'odendi') },
+    ]);
+  };
+
+  const handleReddet = (paymentId: string) => {
+    Alert.alert('Reddet', 'Bu dekontu reddediyor musunuz?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Reddet', style: 'destructive', onPress: () => odemeDurumDegistir(paymentId, 'reject_payment', 'reddedildi') },
+    ]);
+  };
+
   const dekontAksiyon = (p: Payment) => {
     if (yukleniyorId === p.id) {
       return <ActivityIndicator size="small" color="#1a6fa8" style={{ marginTop: 8 }} />;
     }
+    const buttons = [];
     if (p.dekont_var) {
-      return (
-        <TouchableOpacity style={styles.dekontGorBtn} onPress={() => handleDekontGor(p.id)}>
+      buttons.push(
+        <TouchableOpacity key="gor" style={styles.dekontGorBtn} onPress={() => handleDekontGor(p.id)}>
           <Text style={styles.dekontGorText}>Dekontu Gör</Text>
         </TouchableOpacity>
       );
     }
-    if (role === 'kiraci' || role === 'emlakci') {
-      return (
-        <TouchableOpacity style={styles.dekontYukleBtn} onPress={() => handleDekontYukle(p.id)}>
-          <Text style={styles.dekontYukleText}>Dekont Yükle</Text>
+    if ((role === 'kiraci' || role === 'emlakci') && p.durum !== 'odendi' && (!p.dekont_var || p.durum === 'reddedildi')) {
+      buttons.push(
+        <TouchableOpacity key="yukle" style={styles.dekontYukleBtn} onPress={() => handleDekontYukle(p.id)}>
+          <Text style={styles.dekontYukleText}>{p.durum === 'reddedildi' ? 'Yeniden Yükle' : 'Dekont Yükle'}</Text>
         </TouchableOpacity>
       );
     }
-    return null;
+    if ((role === 'mal_sahibi' || role === 'emlakci') && p.durum !== 'odendi') {
+      buttons.push(
+        <TouchableOpacity key="onayla" style={styles.onayBtn} onPress={() => handleOnayla(p.id)}>
+          <Text style={styles.onayText}>Onayla</Text>
+        </TouchableOpacity>
+      );
+    }
+    if ((role === 'mal_sahibi' || role === 'emlakci') && p.durum === 'beklemede') {
+      buttons.push(
+        <TouchableOpacity key="reddet" style={styles.redBtn} onPress={() => handleReddet(p.id)}>
+          <Text style={styles.redText}>Reddet</Text>
+        </TouchableOpacity>
+      );
+    }
+    if (buttons.length === 0) return null;
+    return <View style={styles.aksiyonRow}>{buttons}</View>;
   };
 
   const ozet = useMemo(() => {
@@ -439,10 +480,15 @@ const styles = StyleSheet.create({
   depozitLabel: { fontSize: 14, fontWeight: '600', color: '#1a1a1a' },
   depozitAlt: { fontSize: 11, color: '#aaa' },
   rowInner:        { flexDirection: 'row', alignItems: 'center' },
-  dekontGorBtn:    { marginTop: 8, paddingVertical: 6, alignItems: 'center', borderRadius: 6, backgroundColor: '#e8f4fd' },
+  aksiyonRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  dekontGorBtn:    { paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', borderRadius: 6, backgroundColor: '#e8f4fd' },
   dekontGorText:   { fontSize: 12, color: '#1a6fa8', fontWeight: '500' },
-  dekontYukleBtn:  { marginTop: 8, paddingVertical: 6, alignItems: 'center', borderRadius: 6, backgroundColor: '#f0f0f0' },
+  dekontYukleBtn:  { paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', borderRadius: 6, backgroundColor: '#f0f0f0' },
   dekontYukleText: { fontSize: 12, color: '#555', fontWeight: '500' },
+  onayBtn:         { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: '#e6f5ea' },
+  onayText:        { fontSize: 12, color: '#1e7e45', fontWeight: '600' },
+  redBtn:          { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: '#fdecec' },
+  redText:         { fontSize: 12, color: '#c0392b', fontWeight: '600' },
   modal:           { flex: 1, backgroundColor: '#f5f5f0' },
   modalHeader:     { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
   modalTitle:      { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },

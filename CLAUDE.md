@@ -96,6 +96,13 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Yeni paketler: `react-native-webview`, `expo-document-picker`, `expo-dev-client`
 - tsc temiz (pre-existing `.finally` latent hatası hariç)
 
+**Faz 3.5d — Ödeme onay/red UI** (11.06.2026)
+- Migration `015_odeme_onay.sql`: `approve_payment` + `reject_payment` RPC (SECURITY DEFINER, mal_sahibi + emlakci yetkili; `onaylayan_user_id` + `odeme_tarihi` yazımı)
+- `OdemeTakipScreen`: `odemeDurumDegistir` ortak handler + `handleOnayla` / `handleReddet`; `dekontAksiyon` buton satırına dönüştürüldü (`aksiyonRow` + yeni `onayBtn`/`redBtn` stiller)
+- Guard'lar: Onayla → `durum !== 'odendi'`; Reddet → yalnızca `beklemede`; Dekont Yükle → reddedilmişte "Yeniden Yükle" etiketi + `dekont_var` olsa bile yeniden yüklenebilir
+- Optimistik güncelleme: RPC başarısında `setOdemeler` local state'i günceller, refetch yok
+- Dekont/ödeme çekirdeği (3.5a–d) tamamlandı
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
@@ -112,9 +119,9 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
-**Faz 3.5d — Durum değiştirme:**
-- Emlakçı: ödeme satırını `odendi` / `reddedildi` olarak işaretleme
-- `onaylayan_user_id` + `odeme_tarihi` yazımı (RPC ile)
+**Sıradaki build hedefi:**
+- Play production build (versionCode 13) gerçek kullanım için
+- Dev build için ayrı paket adı (`.dev` variant) — dev ile Play yan yana dursun
 
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
@@ -192,4 +199,4 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
   Trigger zaten `needsEmailConfirmation` durumunu handle ediyor — sorun olmayacak.
 - **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
 - **AI:** Claude Sonnet 4.6 via Supabase Edge Function proxy (+ direct fallback)
-- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 (hepsi Supabase'de çalıştırıldı)
+- **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 (hepsi Supabase'de çalıştırıldı)
