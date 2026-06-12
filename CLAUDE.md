@@ -109,6 +109,18 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - **Play Store versionCode 12** yüklendi (04.06.2026): rol UI + eşya fix + loading
 - Faz 3.5a+3.5b push edildi (06.06.2026)
 
+### BUILD / VARIANT SİSTEMİ (12.06.2026)
+
+- `app.json` → `app.config.js`'e çevrildi. `APP_VARIANT` env ile 3 variant:
+  - `production` (variant yok): `com.batusonmez.gayrimenkpro` / "Gayrimenk Pro" — Play'deki gerçek uygulama
+  - `development`: `com.batusonmez.gayrimenkpro.dev` / "Gayrimenk Pro (Dev)" — dev-client APK
+  - `preview`: `com.batusonmez.gayrimenkpro.preview` / "Gayrimenk Pro (Preview)"
+- **versionCode 13** (sonraki Play gönderimi: 14). `appVersionSource: local`.
+- `eas.json` `development`/`preview` profillerine `APP_VARIANT` env eklendi; `production: {}` değişmedi.
+- `.dev` keystore production'dan AYRI (yeni üretildi); production keystore `Y-EnWS1ynJ` korundu.
+- Production AAB (vc13) Play Console'a yüklendi; Internal testing rollout + telefona kurulum 12.06.
+- Dev çalıştırma: `npx expo start --dev-client` (local `.env`'den `EXPO_PUBLIC_SUPABASE_URL` + `ANON_KEY` okunur).
+
 ### TEST VERİSİ (Supabase)
 
 - `malsahibi@gmail.com` → `role=mal_sahibi`, `org_id=fd36bc75` (test1 org'u)
@@ -118,10 +130,6 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 ---
 
 ## Sıradaki
-
-**Sıradaki build hedefi:**
-- Play production build (versionCode 13) gerçek kullanım için
-- Dev build için ayrı paket adı (`.dev` variant) — dev ile Play yan yana dursun
 
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
