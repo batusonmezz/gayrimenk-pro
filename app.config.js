@@ -29,6 +29,7 @@ export default {
     },
     ios: {
       supportsTablet: true,
+      bundleIdentifier: getPackage(),
     },
     android: {
       versionCode: 13,
