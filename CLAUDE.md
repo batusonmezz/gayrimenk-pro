@@ -139,14 +139,26 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
-**Sıradaki — UI / giriş:**
-- Giriş ekranı yenileme (rol-seçimli karşılama; rol hesaptan belli olduğu için kartların işlevsel mi görsel mi olacağına karar ver)
-- Şifremi unuttum (Supabase Auth password reset)
-- item 1: kiracı <-> mal sahibi karşı taraf görünürlüğü (ad+telefon, kimlik foto HAYIR)
-- ListeScreen rol uyarlama
+**✅ Push 1 — Giriş akışı görsel yenileme** (commit `f162159`, 18.06.2026)
+- WelcomeScreen (rol seçim ekranı, Ionicons), roleLabel helper, LoginScreen role-param + göz ikonu + footer, ForcePasswordChangeScreen göz ikonu, HomeScreen yeni rol etiketleri, self-signup kapalı. @expo/vector-icons eklendi.
+
+**Push 2 — Şifremi unuttum**
+- `supabase.auth.resetPasswordForEmail` + deep-link (Expo Linking) + SMTP (Resend vb.)
+- Var olan hesabın şifresini sıfırlar — re-invite DEĞİL (re-invite person↔user bağını koparır, sözleşmeleri kaybettirir)
+- SMTP kurulumu Faz 6 e-posta onayı için de gerekli (ortak altyapı)
+
+**Push 3 — Hesabımı sil**
+- Apple App Store 5.1.1(v) zorunluluğu (iOS çıkışından önce şart)
+- KVKK uyumu
+- Arkadaki "kullanıcı sil" yolu ileride tahliye erişim iptalinde de kullanılacak
+- Android çıkışını bloklamaz
+
+**Sonra (sırasıyla):**
+- Tahliye protokolü + erişim iptali (bkz. Gelecek bölümü)
+- Logo yenileme (acele yok)
 
 **Açık borçlar:**
-- Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
+- Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü — ad+telefon, kimlik foto HAYIR)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
 
 **Ertelenmiş:**
