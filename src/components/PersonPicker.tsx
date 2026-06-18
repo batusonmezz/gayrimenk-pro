@@ -95,7 +95,25 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
                       .select('odeme_bilgisi, kimlik_foto_url, kimlik_foto_arka_url')
                       .eq('id', item.id)
                       .single();
-                    onSelect({ ...item, ...(extra ?? {}) });
+                    const resolved = { ...(extra ?? {}) };
+                    const isPath = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}/.test(s);
+                    const dlBase64 = async (path: string): Promise<string | null> => {
+                      const { data: blob } = await supabase.storage.from('kimlik-belgeleri').download(path);
+                      if (!blob) return null;
+                      return new Promise((res, rej) => {
+                        const reader = new FileReader();
+                        reader.onload = () => res((reader.result as string).split(',')[1]);
+                        reader.onerror = rej;
+                        reader.readAsDataURL(blob);
+                      });
+                    };
+                    if (resolved.kimlik_foto_url && isPath(resolved.kimlik_foto_url)) {
+                      resolved.kimlik_foto_url = await dlBase64(resolved.kimlik_foto_url) ?? resolved.kimlik_foto_url;
+                    }
+                    if (resolved.kimlik_foto_arka_url && isPath(resolved.kimlik_foto_arka_url)) {
+                      resolved.kimlik_foto_arka_url = await dlBase64(resolved.kimlik_foto_arka_url) ?? resolved.kimlik_foto_arka_url;
+                    }
+                    onSelect({ ...item, ...resolved });
                   } catch {
                     onSelect(item);
                   }

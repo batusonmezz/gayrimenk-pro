@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, 
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../storage/supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
-import { getRole } from '../services/authState';
+import { getRole, getOrganizationId } from '../services/authState';
+import { decode } from 'base64-arraybuffer';
 import { getCurrentUser } from '../services/auth';
 import { WebView } from 'react-native-webview';
 import * as DocumentPicker from 'expo-document-picker';
@@ -120,21 +121,21 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   );
 
   useFocusEffect(useCallback(() => {
-    setYukleniyor(true);
-    setHata(null);
-    supabase
-      .from('payments')
-      .select('id, tip, donem, tutar_kurus, vade_tarihi, durum, dekont_var')
-      .eq('contract_id', contractId)
-      .order('donem', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          setHata('Ödemeler yüklenemedi.');
-        } else {
-          setOdemeler((data ?? []) as Payment[]);
-        }
-      })
-      .finally(() => setYukleniyor(false));
+    (async () => {
+      setYukleniyor(true);
+      setHata(null);
+      try {
+        const { data, error } = await supabase
+          .from('payments')
+          .select('id, tip, donem, tutar_kurus, vade_tarihi, durum, dekont_var')
+          .eq('contract_id', contractId)
+          .order('donem', { ascending: true });
+        if (error) setHata('Ödemeler yüklenemedi.');
+        else setOdemeler((data ?? []) as Payment[]);
+      } finally {
+        setYukleniyor(false);
+      }
+    })();
   }, [contractId]));
 
   const handleDekontYukle = (paymentId: string) => {
@@ -148,16 +149,26 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   const dekontGonder = async (paymentId: string, base64: string, mime: string) => {
     setYukleniyorId(paymentId);
     try {
-      const { error } = await supabase.rpc('upload_dekont', {
-        p_payment_id: paymentId, p_dekont: base64, p_mime: mime,
+      const orgId = getOrganizationId();
+      if (!orgId) throw new Error('Oturum bilgisi eksik.');
+      const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : 'jpg';
+      const path = `${orgId}/${contractId}/${paymentId}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('dekontlar')
+        .upload(path, decode(base64), { contentType: mime, upsert: true });
+      if (upErr) throw upErr;
+      const { error: rpcErr } = await supabase.rpc('record_dekont', {
+        p_payment_id: paymentId, p_path: path, p_mime: mime,
       });
-      if (error) throw error;
+      if (rpcErr) throw rpcErr;
       setOdemeler(prev => prev.map(p => p.id === paymentId
         ? { ...p, dekont_var: true, durum: 'beklemede' } : p));
       Alert.alert('Başarılı', 'Dekont yüklendi.');
     } catch (e: any) {
       Alert.alert('Hata', e?.message ?? 'Dekont yüklenemedi.');
-    } finally { setYukleniyorId(null); }
+    } finally {
+      setYukleniyorId(null);
+    }
   };
 
   const dekontFotoSec = async (paymentId: string) => {
@@ -197,7 +208,19 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
         .eq('id', paymentId)
         .single();
       if (error) throw error;
-      setDekontBase64(data?.dekont_url ?? null);
+      const path = data?.dekont_url;
+      if (!path) throw new Error('Dekont bulunamadı.');
+      const { data: blob, error: dlErr } = await supabase.storage
+        .from('dekontlar')
+        .download(path);
+      if (dlErr) throw dlErr;
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob!);
+      });
+      setDekontBase64(base64);
       setDekontMime(data?.dekont_mime ?? null);
     } catch (e: any) {
       Alert.alert('Hata', e?.message ?? 'Dekont yüklenemedi.');

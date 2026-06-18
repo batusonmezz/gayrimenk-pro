@@ -32,7 +32,7 @@ export default {
       bundleIdentifier: getPackage(),
     },
     android: {
-      versionCode: 13,
+      versionCode: 14,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',

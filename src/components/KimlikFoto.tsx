@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../storage/supabaseClient';
 
 interface Props {
   label: string;
@@ -19,8 +20,43 @@ export default function KimlikFoto({ label, onFotoSecildi, initialOn, initialArk
   const arkaRef = useRef(initialArka ?? '');
 
   // edit modu / mal sahibi picker sonrası dışarıdan gelen değerleri al (asla boşla ezme)
-  useEffect(() => { if (initialOn)   { onRef.current   = initialOn;   setOn(initialOn);     } }, [initialOn]);
-  useEffect(() => { if (initialArka) { arkaRef.current = initialArka; setArka(initialArka); } }, [initialArka]);
+  useEffect(() => {
+    if (!initialOn) return;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}/.test(initialOn)) {
+      (async () => {
+        const { data: blob } = await supabase.storage.from('kimlik-belgeleri').download(initialOn);
+        if (!blob) return;
+        const b64 = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res((reader.result as string).split(',')[1]);
+          reader.onerror = rej;
+          reader.readAsDataURL(blob);
+        });
+        onRef.current = b64; setOn(b64);
+      })();
+    } else {
+      onRef.current = initialOn; setOn(initialOn);
+    }
+  }, [initialOn]);
+
+  useEffect(() => {
+    if (!initialArka) return;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}/.test(initialArka)) {
+      (async () => {
+        const { data: blob } = await supabase.storage.from('kimlik-belgeleri').download(initialArka);
+        if (!blob) return;
+        const b64 = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res((reader.result as string).split(',')[1]);
+          reader.onerror = rej;
+          reader.readAsDataURL(blob);
+        });
+        arkaRef.current = b64; setArka(b64);
+      })();
+    } else {
+      arkaRef.current = initialArka; setArka(initialArka);
+    }
+  }, [initialArka]);
 
   const secFoto = useCallback(async (taraf: 'on' | 'arka') => {
     setYukleniyor(true);

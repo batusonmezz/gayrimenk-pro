@@ -36,6 +36,14 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - `contract_items` / `contract_photos`: değişmedi — contracts SELECT üzerinden otomatik filtreleniyor
 - **Test edildi:** mal sahibi 1 sözleşme görüyor, cloud'a yazamıyor (42501 RLS reddi)
 
+**Faz 3.3 — Davet sistemi + zorunlu şifre** (Migration 010 + 011)
+- `010_invite.sql`: `person_belongs_to_user(UUID)` helper (STABLE SECURITY DEFINER); `handle_new_user` davetli akışı (`raw_app_meta_data.organization_id` varsa role+person_id bağlar, yoksa 006 emlakçı akışı); `contracts_select` + `user_can_access_contract()` fonksiyonlarına `person_belongs_to_user(mal_sahibi_person_id / kiraci_person_id)` OR dalları eklendi
+- `011_force_pw.sql`: `users.must_change_password BOOLEAN NOT NULL DEFAULT false` + `clear_must_change_password()` RPC (SECURITY DEFINER)
+- `invite-user` Edge Function (`supabase/functions/invite-user/index.ts`): Deno, POST-only, Authorization header zorunlu
+- `KisilerScreen.tsx` mevcut + App.tsx authenticated stack'te kayıtlı
+- `ForcePasswordChangeScreen.tsx` mevcut + App.tsx'te login sonrası gate (mustChangePassword ? ForcePasswordChange : normal stack)
+- **DURUM:** Kod tam + bağlı. Runtime teyidi (deployed mi + uçtan uca test) ayrıca yapılacak.
+
 **Faz 3.4a — HomeScreen kullanıcı bilgisi** (commit `630fc6d`)
 - `authState.ts`: role + email getter/setter eklendi
 - `auth.ts`: `AuthUser.role`, `getCurrentUser`/`signIn`/`signUp` SELECT role + `setRole`/`setEmail`
@@ -131,13 +139,15 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
+**Sıradaki — B4.5 Storage cleanup:**
+- upload_dekont(uuid,text,text) RPC drop (artık record_dekont) — 018_drop_upload_dekont.sql
+- Storage göçü biter. Sonra: item 1 (kiraci<->mal sahibi karşı taraf görünürlüğü: ad+telefon), ListeScreen rol uyarlama.
+
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
-- OdemeTakipScreen.tsx:137 — .finally PromiseLike üzerinde (3.5b'den kalma), latent tsc hatası + runtime riski; ileride düzelt, 2a scope dışı.
 
 **Ertelenmiş:**
-- **Faz 3.3** — Davet sistemi: `inviteUserByEmail` + SMTP
 - **Faz 3.4 kalan** — `FormScreen` rol uyarlama (çok kompleks, ayrı faz)
 
 ---
@@ -186,17 +196,19 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 1. ✅ Migration 008 — uygulandı + doğrulandı (3 tablo, 12 policy, eski sözleşmeler bozulmadı, 06.06)
 2a. ✅ Kiracı kişisi — PersonPicker + persons upsert + contracts.kiraci_person_id bağlama. tsc temiz (2a'dan 0 hata), 4 senaryo cihazda geçti (07.06).
 2b. ✅ Site + Mal Sahibi entegrasyonu — Migration 009 (persons banka/arka foto, buildings adres, contracts building_id+mal_sahibi_person_id), SitelerScreen (liste + ekle/düzenle/sil), site picker (adres aynen) + mal sahibi picker (kiraya veren+banka+ön/arka foto otomatik), mal sahibi otomatik yakalama (coalesce wipe-guard), edit rehydration + wipe-guard, KimlikFoto initialOn/initialArka (edit modu + picker sonrası thumbnail). tsc temiz, cihazda test edildi (07.06).
+B4.1. ✅ Storage altyapısı — Migration 016_storage_buckets.sql (16.06). 2 private bucket: `kimlik-belgeleri` (emlakçı-only) + `dekontlar` (sözleşme tarafları). `storage.objects` RLS: 8 policy; `auth_org_id`/`auth_role`/`user_can_access_contract` üzerine. Path şeması: `{org_id}` ilk segment; kimlik `{org}/persons|contracts/…`, dekont `{org}/{contract_id}/{payment_id}`. `contract_photos` (kimlik fotoları) → `kimlik-belgeleri`'ne maplendi; `sozlesme-belgeleri` bucket açılmadı. ADDITIVE: mevcut base64 verisi dokunulmadı; cutover + test temizliği B4.2+'de.
+B4.2. ✅ Dekont Storage'a — Migration 017 (record_dekont RPC: upload_dekont guard'larının aynısı, base64 yerine path, durum='beklemede'). OdemeTakipScreen: yükleme -> dekontlar {org}/{contract}/{payment}.{ext} + record_dekont; görüntüleme -> storage.download -> base64 -> mevcut WebView. :137 .finally fix. Dekont base64 temizlendi, base64-arraybuffer eklendi. Cihazda test (foto+PDF). upload_dekont DROP edilecek (B4.5).
+B4.3. ✅ Kimlik fotoları Storage'a — kimlik-belgeleri bucket (emlakci-only). SupabaseStorageService: persons kimlik (UPDATE/INSERT, insert->id->upload->update) + contract_photos -> Storage upload + path; sozlesmeleriGetir async map, path->download->base64. PersonPicker + KimlikFoto: path->download. contentType image/jpeg|png. Backward-compat UUID-prefix. pdfTemplate/PreviewScreen değişmedi. Kimlik base64 temizlendi. Cihazda test: Storage dosyası, thumbnail, PDF gömme ✓.
 3. MalSahibiScreen persons/units'ten okuma
-4. (Ayrı) B4: gerçek Storage bucket — kimlik foto reuse için
-5. (Ayrı/sonra) Eski form_data → persons/units backfill (elle onaylı)
-6. (Ayrı/sonra) Taraf erişimi + profil = davet sistemi (Faz 3.3)
+4. (Ayrı/sonra) Eski form_data → persons/units backfill (elle onaylı)
+5. (Ayrı/sonra) Taraf erişimi + profil = davet sistemi (Faz 3.3)
 
 ### Keşif bulguları (06.06.2026)
 - Mevcut: sözleşme-merkezli, kişi/mülk verisi contracts.form_data JSONB'de gömülü
 - B1: MalSahibiScreen kiraya_veren_ad string'iyle gruplanıyor (isim çakışması)
 - B2: Çok daireli mal sahibi bilgisi her sözleşmede tekrar
 - B3: Bina/blok/kat formda yok, kapi_no serbest text
-- B4: kimlik foto base64/URI, gerçek Storage bucket yok
+- B4: ✅ Storage bucket oluşturuldu (B4.1); base64→path cutover B4.2+'de
 - B5: mal_sahibi_user_id prod'da boş (davet yok)
 
 ---

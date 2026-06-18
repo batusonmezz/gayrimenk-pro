@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { decode } from 'base64-arraybuffer';
 import { getOrganizationId } from '../services/authState';
 import type { IStorageService } from './IStorageService';
 import type { SozlesmeKayit } from './types';
@@ -80,17 +81,32 @@ export class SupabaseStorageService implements IStorageService {
           .maybeSingle();
         if (existing?.id) {
           // Dedup: yalnızca dolu alanları güncelle — boş değerle ezme
+          const personId = existing.id as string;
           const patch: Record<string, string> = {};
           if (ad)                  patch.ad_soyad              = ad;
           if (data.tel?.trim())    patch.telefon               = data.tel.trim();
           if (data.adres?.trim())  patch.adres                 = data.adres.trim();
           if (data.odemeBilgisi?.trim()) patch.odeme_bilgisi   = data.odemeBilgisi.trim();
-          if (data.kimlikFotoOn?.trim()) patch.kimlik_foto_url  = data.kimlikFotoOn.trim();
-          if (data.kimlikFotoArka?.trim()) patch.kimlik_foto_arka_url = data.kimlikFotoArka.trim();
-          if (Object.keys(patch).length > 0) {
-            await supabase.from('persons').update(patch).eq('id', existing.id as string);
+          if (data.kimlikFotoOn?.trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}/.test(data.kimlikFotoOn)) {
+            const b64 = data.kimlikFotoOn.trim();
+            const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+            const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+            const path = `${orgId}/persons/${personId}/on.${ext}`;
+            await supabase.storage.from('kimlik-belgeleri').upload(path, decode(b64), { contentType, upsert: true });
+            patch.kimlik_foto_url = path;
           }
-          return existing.id as string;
+          if (data.kimlikFotoArka?.trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}/.test(data.kimlikFotoArka)) {
+            const b64 = data.kimlikFotoArka.trim();
+            const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+            const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+            const path = `${orgId}/persons/${personId}/arka.${ext}`;
+            await supabase.storage.from('kimlik-belgeleri').upload(path, decode(b64), { contentType, upsert: true });
+            patch.kimlik_foto_arka_url = path;
+          }
+          if (Object.keys(patch).length > 0) {
+            await supabase.from('persons').update(patch).eq('id', personId);
+          }
+          return personId;
         }
       }
 
@@ -101,8 +117,8 @@ export class SupabaseStorageService implements IStorageService {
         telefon: data.tel?.trim() || null,
         adres: data.adres?.trim() || null,
         odeme_bilgisi: data.odemeBilgisi?.trim() || null,
-        kimlik_foto_url: data.kimlikFotoOn?.trim() || null,
-        kimlik_foto_arka_url: data.kimlikFotoArka?.trim() || null,
+        kimlik_foto_url: null,
+        kimlik_foto_arka_url: null,
       };
       const { data: inserted, error } = await supabase
         .from('persons')
@@ -110,7 +126,28 @@ export class SupabaseStorageService implements IStorageService {
         .select('id')
         .single();
       if (error) { console.warn('[persons] mal_sahibi insert hata:', error); return null; }
-      return inserted.id as string;
+      const personId = inserted.id as string;
+      const photoPatch: Record<string, string> = {};
+      if (data.kimlikFotoOn?.trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}/.test(data.kimlikFotoOn)) {
+        const b64 = data.kimlikFotoOn.trim();
+        const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+        const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+        const path = `${orgId}/persons/${personId}/on.${ext}`;
+        await supabase.storage.from('kimlik-belgeleri').upload(path, decode(b64), { contentType, upsert: true });
+        photoPatch.kimlik_foto_url = path;
+      }
+      if (data.kimlikFotoArka?.trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}/.test(data.kimlikFotoArka)) {
+        const b64 = data.kimlikFotoArka.trim();
+        const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+        const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+        const path = `${orgId}/persons/${personId}/arka.${ext}`;
+        await supabase.storage.from('kimlik-belgeleri').upload(path, decode(b64), { contentType, upsert: true });
+        photoPatch.kimlik_foto_arka_url = path;
+      }
+      if (Object.keys(photoPatch).length > 0) {
+        await supabase.from('persons').update(photoPatch).eq('id', personId);
+      }
+      return personId;
     } catch (e) {
       console.warn('[persons] mal_sahibi upsert hata:', e);
       return null;
@@ -167,12 +204,15 @@ export class SupabaseStorageService implements IStorageService {
     const contractId = contract.id as string;
 
     if (kayit.fotograflar && Object.keys(kayit.fotograflar).length > 0) {
-      // TODO (Faz sonrası): base64/file URI → Supabase Storage bucket'a yükle, storage_path güncelle
-      const photos = Object.entries(kayit.fotograflar).map(([key, uri]) => ({
-        contract_id: contractId,
-        photo_key: key,
-        storage_path: uri,
-      }));
+      const photos = await Promise.all(
+        Object.entries(kayit.fotograflar).map(async ([key, b64]) => {
+          const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+          const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+          const path = `${organizationId}/contracts/${contractId}/${key}.${ext}`;
+          await supabase.storage.from('kimlik-belgeleri').upload(path, decode(b64), { contentType, upsert: true });
+          return { contract_id: contractId, photo_key: key, storage_path: path };
+        })
+      );
       const { error: photosError } = await supabase.from('contract_photos').insert(photos);
       if (photosError) {
         await supabase.from('contracts').delete().eq('id', contractId);
@@ -205,13 +245,27 @@ export class SupabaseStorageService implements IStorageService {
 
     if (error) throw error;
 
-    return (data ?? []).map(row => {
-      const photoRecord: Record<string, string> = (row.contract_photos ?? []).reduce(
-        (acc: Record<string, string>, p: { photo_key: string; storage_path: string }) => {
-          acc[p.photo_key] = p.storage_path;
-          return acc;
-        },
-        {}
+    return Promise.all((data ?? []).map(async row => {
+      const photoRecord: Record<string, string> = {};
+      await Promise.all(
+        (row.contract_photos ?? []).map(async (p: { photo_key: string; storage_path: string }) => {
+          if (!p.storage_path) return;
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}/.test(p.storage_path)) {
+            photoRecord[p.photo_key] = p.storage_path; // eski base64 — olduğu gibi
+            return;
+          }
+          try {
+            const { data: blob } = await supabase.storage.from('kimlik-belgeleri').download(p.storage_path);
+            if (!blob) return;
+            const b64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve((reader.result as string).split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            photoRecord[p.photo_key] = b64;
+          } catch { /* RLS reddi veya ağ hatası — fotoğraf atlanır */ }
+        })
       );
 
       const items: { ad: string; marka: string; adet: string }[] = (row.contract_items ?? []).map(
@@ -240,7 +294,7 @@ export class SupabaseStorageService implements IStorageService {
         building_id: (row.building_id as string | null) ?? null,
         mal_sahibi_person_id: (row.mal_sahibi_person_id as string | null) ?? null,
       };
-    });
+    }));
   }
 
   async sozlesmeGuncelle(
@@ -305,11 +359,15 @@ export class SupabaseStorageService implements IStorageService {
     if (fotograflar !== undefined && Object.keys(fotograflar).length > 0) {
       // undefined veya {} gelince mevcut fotoğraflar korunur; sadece dolu set gelince güncellenir
       await supabase.from('contract_photos').delete().eq('contract_id', id);
-      const photos = Object.entries(fotograflar).map(([key, uri]) => ({
-        contract_id: id,
-        photo_key: key,
-        storage_path: uri,
-      }));
+      const photos = await Promise.all(
+        Object.entries(fotograflar).map(async ([key, b64]) => {
+          const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+          const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+          const path = `${orgId}/contracts/${id}/${key}.${ext}`;
+          await supabase.storage.from('kimlik-belgeleri').upload(path, decode(b64), { contentType, upsert: true });
+          return { contract_id: id, photo_key: key, storage_path: path };
+        })
+      );
       const { error: photosError } = await supabase.from('contract_photos').insert(photos);
       if (photosError) throw photosError;
     }
