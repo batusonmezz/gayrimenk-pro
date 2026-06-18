@@ -19,8 +19,8 @@ import ListeScreen from './src/screens/ListeScreen';
 import OdemeTakipScreen from './src/screens/OdemeTakipScreen';
 import SitelerScreen from './src/screens/SitelerScreen';
 import KisilerScreen from './src/screens/KisilerScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
-import SignupScreen from './src/screens/SignupScreen';
 
 const Stack = createStackNavigator();
 
@@ -111,8 +111,8 @@ export default function App() {
           <Stack.Navigator screenOptions={screenOptions}>
             {!session ? (
               <>
-                <Stack.Screen name="Login"  component={LoginScreen} />
-                <Stack.Screen name="Signup" component={SignupScreen} />
+                <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                <Stack.Screen name="Login"   component={LoginScreen} />
               </>
             ) : mustChangePassword ? (
               <Stack.Screen name="ForcePasswordChange" component={ForcePasswordChangeScreen} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import { signOut, getCurrentUser } from '../services/auth';
 import { getRole, getEmail } from '../services/authState';
+import { roleLabel } from '../utils/roleLabel';
 
 const CONTRACT_TYPES = [
   { id: 'kira', title: 'Kira Sözleşmesi', desc: 'Konut ve işyeri kiralamalar', icon: '🏠', enabled: true },
@@ -10,11 +11,6 @@ const CONTRACT_TYPES = [
   { id: 'vekaletname', title: 'Vekaletname', desc: 'Temsil ve yetki belgeleri', icon: '📜', enabled: false },
 ];
 
-function roleTurkce(role: string | null): string {
-  if (role === 'mal_sahibi') return 'Mal Sahibi';
-  if (role === 'kiraci') return 'Kiracı';
-  return 'Emlakçı';
-}
 
 export default function HomeScreen({ navigation }: any) {
   const [email, setEmailState] = useState<string | null>(null);
@@ -58,7 +54,7 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.userInfo}>
           <Text style={styles.userEmail}>{email ?? ''}</Text>
           <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{roleTurkce(role)}</Text>
+            <Text style={styles.roleBadgeText}>{roleLabel(role)}</Text>
           </View>
         </View>
         <Text style={styles.title}>Sözleşmeler</Text>

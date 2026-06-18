@@ -11,6 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../storage/supabaseClient';
 import { colors } from '../theme';
 
@@ -19,7 +20,8 @@ export default function ForcePasswordChangeScreen() {
   const [sifre2, setSifre2] = useState('');
   const [loading, setLoading] = useState(false);
   const [hata, setHata] = useState('');
-  const [goster, setGoster] = useState(false);
+  const [goster1, setGoster1] = useState(false);
+  const [goster2, setGoster2] = useState(false);
   const insets = useSafeAreaInsets();
 
   const handleKaydet = async () => {
@@ -68,38 +70,55 @@ export default function ForcePasswordChangeScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.gosterRow}
-          onPress={() => setGoster(g => !g)}
-        >
-          <Text style={styles.gosterText}>{goster ? 'Gizle' : 'Göster'}</Text>
-        </TouchableOpacity>
-
         <View style={styles.card}>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Yeni Şifre</Text>
-            <TextInput
-              style={styles.input}
-              value={yeniSifre}
-              onChangeText={v => { setYeniSifre(v); if (hata) setHata(''); }}
-              secureTextEntry={!goster}
-              autoCapitalize="none"
-              placeholder="En az 8 karakter"
-              placeholderTextColor={colors.placeholder}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value={yeniSifre}
+                onChangeText={v => { setYeniSifre(v); if (hata) setHata(''); }}
+                secureTextEntry={!goster1}
+                autoCapitalize="none"
+                placeholder="En az 8 karakter"
+                placeholderTextColor={colors.placeholder}
+              />
+              <TouchableOpacity
+                onPress={() => setGoster1(v => !v)}
+                style={styles.eyeBtn}
+              >
+                <Ionicons
+                  name={goster1 ? 'eye-off-outline' : 'eye-outline'}
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.divider} />
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Şifre Tekrar</Text>
-            <TextInput
-              style={styles.input}
-              value={sifre2}
-              onChangeText={v => { setSifre2(v); if (hata) setHata(''); }}
-              secureTextEntry={!goster}
-              autoCapitalize="none"
-              placeholder="Şifreyi tekrar girin"
-              placeholderTextColor={colors.placeholder}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value={sifre2}
+                onChangeText={v => { setSifre2(v); if (hata) setHata(''); }}
+                secureTextEntry={!goster2}
+                autoCapitalize="none"
+                placeholder="Şifreyi tekrar girin"
+                placeholderTextColor={colors.placeholder}
+              />
+              <TouchableOpacity
+                onPress={() => setGoster2(v => !v)}
+                style={styles.eyeBtn}
+              >
+                <Ionicons
+                  name={goster2 ? 'eye-off-outline' : 'eye-outline'}
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -196,14 +215,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  gosterRow: {
-    alignItems: 'flex-end',
-    marginBottom: 8,
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  gosterText: {
-    fontSize: 13,
-    color: colors.primaryAccent,
-    fontWeight: '500',
+  eyeBtn: {
+    paddingLeft: 8,
+    paddingVertical: 2,
   },
   button: {
     backgroundColor: colors.primary,

@@ -8,16 +8,23 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { signIn } from '../services/auth';
+import { roleLabel } from '../utils/roleLabel';
 import { colors } from '../theme';
 
-type Props = { navigation: any };
+const DESTEK_WHATSAPP = '905449444108'; // TODO: numara girilecek
 
-export default function LoginScreen({ navigation }: Props) {
+type Props = { navigation: any; route: any };
+
+export default function LoginScreen({ navigation, route }: Props) {
+  const role: 'emlakci' | 'mal_sahibi' | 'kiraci' = route.params?.role ?? 'emlakci';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const insets = useSafeAreaInsets();
@@ -41,6 +48,11 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
+  const handleWhatsApp = () => {
+    const msg = encodeURIComponent('Gayrimenkul yönetim sistemine kayıt olmak istiyorum');
+    Linking.openURL(`https://wa.me/${DESTEK_WHATSAPP}?text=${msg}`);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior="padding"
@@ -52,9 +64,18 @@ export default function LoginScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.navigate('Welcome')}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.primaryAccent} />
+          <Text style={styles.backText}>Rol seçimi</Text>
+        </TouchableOpacity>
+
         <View style={styles.logoArea}>
           <Text style={styles.brand}>GAYRİMENK PRO</Text>
-          <Text style={styles.subtitle}>Giriş Yap</Text>
+          <Text style={styles.roleLabel}>{roleLabel(role)} girişi</Text>
+          <Text style={styles.heading}>Hesabınıza giriş yapın</Text>
         </View>
 
         <View style={styles.card}>
@@ -74,15 +95,27 @@ export default function LoginScreen({ navigation }: Props) {
           <View style={styles.divider} />
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Şifre</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              placeholder="••••••"
-              placeholderTextColor={colors.placeholder}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                placeholder="••••••"
+                placeholderTextColor={colors.placeholder}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(v => !v)}
+                style={styles.eyeBtn}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -98,15 +131,20 @@ export default function LoginScreen({ navigation }: Props) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.signupRow}
-          onPress={() => navigation.navigate('Signup')}
-        >
-          <Text style={styles.signupText}>
-            Hesabın yok mu?{' '}
-            <Text style={styles.signupLink}>Kayıt Ol</Text>
-          </Text>
-        </TouchableOpacity>
+        {role === 'emlakci' ? (
+          <TouchableOpacity style={styles.footerRow} onPress={handleWhatsApp}>
+            <Text style={styles.footerText}>
+              Hesabınız yok mu?{' '}
+              <Text style={styles.footerLink}>bizimle iletişime geçin</Text>
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>
+              Hesabınız yok mu? Yöneticinizden davet isteyin
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -122,6 +160,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 24,
+    gap: 4,
+  },
+  backText: {
+    fontSize: 14,
+    color: colors.primaryAccent,
+    fontWeight: '500',
+  },
   logoArea: {
     alignItems: 'center',
     marginBottom: 32,
@@ -133,7 +183,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
   },
-  subtitle: {
+  roleLabel: {
+    fontSize: 13,
+    color: colors.primaryAccent,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  heading: {
     fontSize: 26,
     fontWeight: '500',
     color: colors.text,
@@ -167,6 +223,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingVertical: 2,
   },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    paddingLeft: 8,
+    paddingVertical: 2,
+  },
   error: {
     color: colors.error,
     fontSize: 13,
@@ -188,15 +252,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  signupRow: {
+  footerRow: {
     alignItems: 'center',
     paddingVertical: 8,
   },
-  signupText: {
+  footerText: {
     fontSize: 14,
     color: colors.textMuted,
+    textAlign: 'center',
   },
-  signupLink: {
+  footerLink: {
     color: colors.primaryAccent,
     fontWeight: '500',
   },

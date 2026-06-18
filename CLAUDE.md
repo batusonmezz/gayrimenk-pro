@@ -139,9 +139,11 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 ## Sıradaki
 
-**Sıradaki — B4.5 Storage cleanup:**
-- upload_dekont(uuid,text,text) RPC drop (artık record_dekont) — 018_drop_upload_dekont.sql
-- Storage göçü biter. Sonra: item 1 (kiraci<->mal sahibi karşı taraf görünürlüğü: ad+telefon), ListeScreen rol uyarlama.
+**Sıradaki — UI / giriş:**
+- Giriş ekranı yenileme (rol-seçimli karşılama; rol hesaptan belli olduğu için kartların işlevsel mi görsel mi olacağına karar ver)
+- Şifremi unuttum (Supabase Auth password reset)
+- item 1: kiracı <-> mal sahibi karşı taraf görünürlüğü (ad+telefon, kimlik foto HAYIR)
+- ListeScreen rol uyarlama
 
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü)
@@ -149,6 +151,16 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 **Ertelenmiş:**
 - **Faz 3.4 kalan** — `FormScreen` rol uyarlama (çok kompleks, ayrı faz)
+
+---
+
+## Gelecek — Tahliye protokolü (uygulama aktif kullanıma geçtikten SONRA)
+Yeni bir sözleşme/belge tipi. Akış:
+- Emlakçı "Tahliye"ye basar -> sistem "tahliye protokolü olusturulsun mu?" diye sorar
+- İstenirse depozito bedeli vb. bilgiler sorulur
+- İki taraf (mal sahibi + kiracı) için tahliye protokolü düzenlenir
+Erişim iptaliyle baglantılı: tahliye = kiracının daireye erisiminin kesilmesi.
+Batu'da örnek metinler var. Öncelik: uygulama yayınlanıp tam kullanıma geçince.
 
 ---
 
@@ -199,6 +211,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 B4.1. ✅ Storage altyapısı — Migration 016_storage_buckets.sql (16.06). 2 private bucket: `kimlik-belgeleri` (emlakçı-only) + `dekontlar` (sözleşme tarafları). `storage.objects` RLS: 8 policy; `auth_org_id`/`auth_role`/`user_can_access_contract` üzerine. Path şeması: `{org_id}` ilk segment; kimlik `{org}/persons|contracts/…`, dekont `{org}/{contract_id}/{payment_id}`. `contract_photos` (kimlik fotoları) → `kimlik-belgeleri`'ne maplendi; `sozlesme-belgeleri` bucket açılmadı. ADDITIVE: mevcut base64 verisi dokunulmadı; cutover + test temizliği B4.2+'de.
 B4.2. ✅ Dekont Storage'a — Migration 017 (record_dekont RPC: upload_dekont guard'larının aynısı, base64 yerine path, durum='beklemede'). OdemeTakipScreen: yükleme -> dekontlar {org}/{contract}/{payment}.{ext} + record_dekont; görüntüleme -> storage.download -> base64 -> mevcut WebView. :137 .finally fix. Dekont base64 temizlendi, base64-arraybuffer eklendi. Cihazda test (foto+PDF). upload_dekont DROP edilecek (B4.5).
 B4.3. ✅ Kimlik fotoları Storage'a — kimlik-belgeleri bucket (emlakci-only). SupabaseStorageService: persons kimlik (UPDATE/INSERT, insert->id->upload->update) + contract_photos -> Storage upload + path; sozlesmeleriGetir async map, path->download->base64. PersonPicker + KimlikFoto: path->download. contentType image/jpeg|png. Backward-compat UUID-prefix. pdfTemplate/PreviewScreen değişmedi. Kimlik base64 temizlendi. Cihazda test: Storage dosyası, thumbnail, PDF gömme ✓.
+B4.5. ✅ Storage cleanup + production — upload_dekont(uuid,text,text) drop (018). versionCode 14 / versionName 7.3.0 production AAB build edilip Play Internal Testing'e çıkıldı (18.06). B4 (dekont+kimlik+sozlesme fotolari) base64->Storage gocu TAMAMEN bitti, production'da canli.
 3. MalSahibiScreen persons/units'ten okuma
 4. (Ayrı/sonra) Eski form_data → persons/units backfill (elle onaylı)
 5. (Ayrı/sonra) Taraf erişimi + profil = davet sistemi (Faz 3.3)
