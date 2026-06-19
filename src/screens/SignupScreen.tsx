@@ -47,7 +47,7 @@ export default function SignupScreen({ navigation }: Props) {
       if (result.needsEmailConfirmation) {
         setInfo('Kayıt başarılı! Email adresinize gönderilen linke tıklayarak hesabınızı doğrulayın.');
       } else {
-        navigation.replace('Home');
+        navigation.replace('MainTabs');
       }
     } catch (err: any) {
       setError(err.message);

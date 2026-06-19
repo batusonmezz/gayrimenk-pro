@@ -88,7 +88,7 @@ export default function PreviewScreen({ navigation, route }: any) {
           mal_sahibi_person_id: malSahibiPersonId,
         });
       }
-      navigation.navigate('Home');
+      navigation.navigate('MainTabs');
       return;
     }
 
@@ -114,7 +114,7 @@ export default function PreviewScreen({ navigation, route }: any) {
           mal_sahibi_person_id: malSahibiPersonId,
         });
       }
-      navigation.navigate('Home');
+      navigation.navigate('MainTabs');
     } catch (e) {
       console.log('PDF hatası:', e);
     }

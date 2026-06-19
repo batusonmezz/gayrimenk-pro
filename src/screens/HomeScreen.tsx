@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
-import { signOut, getCurrentUser } from '../services/auth';
+import { getCurrentUser } from '../services/auth';
 import { getRole, getEmail } from '../services/authState';
 import { roleLabel } from '../utils/roleLabel';
 
@@ -33,23 +33,12 @@ export default function HomeScreen({ navigation }: any) {
     }
   }, []);
 
-  const handleCikis = async () => {
-    try {
-      await signOut();
-    } catch {
-      // App.tsx listener yine de Login'e atar
-    }
-  };
-
   return (
     <View style={[styles.container, {height: '100%' as any, flex: 1}]}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.brand}>GAYRİMENK PRO</Text>
-          <TouchableOpacity onPress={handleCikis} style={styles.cikisBtn}>
-            <Text style={styles.cikisText}>Çıkış</Text>
-          </TouchableOpacity>
         </View>
         <View style={styles.userInfo}>
           <Text style={styles.userEmail}>{email ?? ''}</Text>
@@ -185,9 +174,7 @@ const styles = StyleSheet.create({
   researchDesc: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
   badge: { backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   badgeText: { color: '#9fe1cb', fontSize: 10 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cikisBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-  cikisText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
+  headerTop: { flexDirection: 'row', alignItems: 'center' },
   userInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, marginBottom: 4 },
   userEmail: { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
   roleBadge: { backgroundColor: 'rgba(159,225,203,0.15)', borderWidth: 1, borderColor: 'rgba(159,225,203,0.35)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },

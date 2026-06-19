@@ -4,10 +4,13 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from './src/theme';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
 import * as auth from './src/services/auth';
-import { setOrganizationId, setRole, setMustChangePassword } from './src/services/authState';
+import { setOrganizationId, setRole, setMustChangePassword, getRole } from './src/services/authState';
 import ForcePasswordChangeScreen from './src/screens/ForcePasswordChangeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import FormScreen from './src/screens/FormScreen';
@@ -23,8 +26,57 @@ import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+import ProfilScreen from './src/screens/ProfilScreen';
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function MainTabs() {
+  const role = getRole();
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: colors.primaryAccent,
+        tabBarInactiveTintColor: colors.textFaint,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopWidth: 0.5,
+          borderTopColor: colors.borderFaint,
+          elevation: 0,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="AnaSayfa"
+        component={HomeScreen}
+        options={{ tabBarIcon: ({ color, focused }) =>
+          <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} /> }}
+      />
+      <Tab.Screen
+        name="Kayitlar"
+        component={KayitlarScreen}
+        options={{ tabBarIcon: ({ color, focused }) =>
+          <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} /> }}
+      />
+      {role === 'emlakci' && (
+        <Tab.Screen
+          name="Kisiler"
+          component={KisilerScreen}
+          options={{ tabBarIcon: ({ color, focused }) =>
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} /> }}
+        />
+      )}
+      <Tab.Screen
+        name="Profil"
+        component={ProfilScreen}
+        options={{ tabBarIcon: ({ color, focused }) =>
+          <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} /> }}
+      />
+    </Tab.Navigator>
+  );
+}
 
 const screenOptions = {
   headerShown: false,
@@ -129,16 +181,14 @@ export default function App() {
               <Stack.Screen name="ForcePasswordChange" component={ForcePasswordChangeScreen} />
             ) : (
               <>
-                <Stack.Screen name="Home"         component={HomeScreen} />
+                <Stack.Screen name="MainTabs"     component={MainTabs} />
                 <Stack.Screen name="Form"         component={FormScreen} />
                 <Stack.Screen name="Preview"      component={PreviewScreen} />
                 <Stack.Screen name="Research"     component={ResearchScreen} />
-                <Stack.Screen name="Kayitlar"     component={KayitlarScreen} />
                 <Stack.Screen name="MalSahipleri" component={MalSahibiScreen} />
                 <Stack.Screen name="Liste"        component={ListeScreen} />
-                <Stack.Screen name="OdemeTakip"  component={OdemeTakipScreen} />
-                <Stack.Screen name="Siteler"     component={SitelerScreen} />
-                <Stack.Screen name="Kisiler"     component={KisilerScreen} />
+                <Stack.Screen name="OdemeTakip"   component={OdemeTakipScreen} />
+                <Stack.Screen name="Siteler"      component={SitelerScreen} />
               </>
             )}
           </Stack.Navigator>

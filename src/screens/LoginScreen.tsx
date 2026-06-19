@@ -39,7 +39,7 @@ export default function LoginScreen({ navigation, route }: Props) {
     try {
       const user = await signIn(email.trim(), password);
       if (!user.mustChangePassword) {
-        navigation.replace('Home');
+        navigation.replace('MainTabs');
       }
     } catch (err: any) {
       setError(err.message);
