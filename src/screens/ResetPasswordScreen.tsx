@@ -27,6 +27,8 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
   const [kod, setKod] = useState('');
   const [yeniSifre, setYeniSifre] = useState('');
   const [showSifre, setShowSifre] = useState(false);
+  const [sifre2, setSifre2] = useState('');
+  const [showSifre2, setShowSifre2] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hata, setHata] = useState('');
   const [yeniden, setYeniden] = useState(false);
@@ -36,6 +38,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
   const handleSifirla = async () => {
     if (kod.length !== 6) { setHata('6 haneli kodu girin.'); return; }
     if (yeniSifre.length < 8) { setHata('Şifre en az 8 karakter olmalı.'); return; }
+    if (yeniSifre !== sifre2) { setHata('Şifreler eşleşmiyor.'); return; }
     setLoading(true);
     setHata('');
     try {
@@ -144,12 +147,39 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                   </TouchableOpacity>
                 </View>
               </View>
+              <View style={styles.divider} />
+              <View style={styles.fieldRow}>
+                <Text style={styles.label}>Şifre Tekrar</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    value={sifre2}
+                    onChangeText={v => { setSifre2(v); if (hata) setHata(''); }}
+                    secureTextEntry={!showSifre2}
+                    autoCapitalize="none"
+                    placeholder="Şifreyi tekrar girin"
+                    placeholderTextColor={colors.placeholder}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowSifre2(v => !v)}
+                    style={styles.eyeBtn}
+                  >
+                    <Ionicons
+                      name={showSifre2 ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      color={colors.textMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
 
             {(() => {
               if (hata) return <Text style={[styles.feedback, { color: colors.error }]}>{hata}</Text>;
               if (yeniSifre.length > 0 && yeniSifre.length < 8)
                 return <Text style={[styles.feedback, { color: colors.textMuted }]}>En az 8 karakter</Text>;
+              if (sifre2.length > 0 && yeniSifre !== sifre2)
+                return <Text style={[styles.feedback, { color: colors.error }]}>Şifreler eşleşmiyor</Text>;
               return null;
             })()}
 
