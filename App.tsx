@@ -21,6 +21,8 @@ import SitelerScreen from './src/screens/SitelerScreen';
 import KisilerScreen from './src/screens/KisilerScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 
 const Stack = createStackNavigator();
 
@@ -33,6 +35,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePasswordState] = useState(false);
+  const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -69,6 +72,11 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       setSession(session);
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecoveryMode(true);
+        if (mounted) setLoading(false);
+        return;
+      }
       try {
         if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
           const user = await withTimeout(auth.getCurrentUser());
@@ -77,6 +85,7 @@ export default function App() {
           setRole(user?.role ?? null);
           setMustChangePasswordState(user?.mustChangePassword ?? false);
         } else if (event === 'SIGNED_OUT') {
+          setPasswordRecoveryMode(false);
           setOrganizationId(null);
           setMustChangePasswordState(false);
           setMustChangePassword(false);
@@ -109,10 +118,12 @@ export default function App() {
       <View style={{ flex: 1, height: '100vh' as any, overflow: 'auto' as any }}>
         <NavigationContainer>
           <Stack.Navigator screenOptions={screenOptions}>
-            {!session ? (
+            {(!session || passwordRecoveryMode) ? (
               <>
-                <Stack.Screen name="Welcome" component={WelcomeScreen} />
-                <Stack.Screen name="Login"   component={LoginScreen} />
+                <Stack.Screen name="Welcome"        component={WelcomeScreen} />
+                <Stack.Screen name="Login"          component={LoginScreen} />
+                <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                <Stack.Screen name="ResetPassword"  component={ResetPasswordScreen} />
               </>
             ) : mustChangePassword ? (
               <Stack.Screen name="ForcePasswordChange" component={ForcePasswordChangeScreen} />

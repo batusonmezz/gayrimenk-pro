@@ -131,6 +131,13 @@ export default function LoginScreen({ navigation, route }: Props) {
           </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.forgotRow}
+          onPress={() => navigation.navigate('ForgotPassword')}
+        >
+          <Text style={styles.forgotText}>Şifremi unuttum</Text>
+        </TouchableOpacity>
+
         {role === 'emlakci' ? (
           <TouchableOpacity style={styles.footerRow} onPress={handleWhatsApp}>
             <Text style={styles.footerText}>
@@ -250,6 +257,16 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.textOnPrimary,
     fontSize: 16,
+    fontWeight: '500',
+  },
+  forgotRow: {
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  forgotText: {
+    fontSize: 13,
+    color: colors.primaryAccent,
     fontWeight: '500',
   },
   footerRow: {
