@@ -245,3 +245,51 @@ B4.5. ✅ Storage cleanup + production — upload_dekont(uuid,text,text) drop (0
 - **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
 - **AI:** Claude Sonnet 4.6 via Supabase Edge Function proxy (+ direct fallback)
 - **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 (hepsi Supabase'de çalıştırıldı)
+
+---
+
+## Ana Uygulama Yenilemesi (Navigasyon + Profil/Ayarlar + Dashboard + Gece Modu)
+
+**Durum:** Planlandı, adım adım yapılacak. (Login redesign Push 1–2 bitti; Push 3 = hesap silme bu plana taşındı.)
+
+### Navigasyon — alt sekme çubuğu (Instagram tarzı)
+- Alt tab bar, **ikon bazlı**, sade. Aktif = dolu ikon, pasif = outline. Flat, açık/koyu temaya uyumlu, ince üst çizgi.
+- **Profil sekmesi = kullanıcı avatarı** (yuvarlak foto). Ayarlar bu sekmenin içinde (IG gibi: profil → ayarlar).
+- Sekmeler **role göre** değişir:
+  - **Emlakçı:** Ana Sayfa · Sözleşmeler · Kişiler · Ödemeler · Profil
+  - **Mal Sahibi:** Ana Sayfa · Sözleşmeler · Ödemeler · Profil
+  - **Kiracı:** Ana Sayfa · Ödemeler · Profil
+- Mevcut ekranlar (Kişiler, Ödeme Takip, sözleşme) sekmelere taşınır.
+- (Opsiyonel/ileride: emlakçı için ortada "+" yeni sözleşme aksiyonu.)
+
+### Profil / Ayarlar (avatar sekmesi)
+Üstte profil bilgisi (foto, ad, email, rol), altta ayarlar listesi:
+- **Profil fotoğrafı** (avatar upload — Supabase Storage)
+- **Gece modu** (toggle)
+- **Hesabımı Sil** (Push 3 — delete-account Edge Function + güçlü onay)
+- **Çıkış**
+- **Gizlilik / KVKK metni** (App Store gizlilik gerekliliği)
+- **Hakkında** (versiyon)
+- **Destek / İletişim** (WhatsApp)
+- (Bildirim ayarı — push ertelendiği için sonraya.)
+
+### Ana Sayfa — Dashboard (role göre)
+Veriler `payments` + `contracts`'tan hesaplanır.
+- **Emlakçı:** Bu ay tahsil edilecek kira · Bu ay tahsil edilen · Geciken (tutar + adet) · Aktif kiracı/sözleşme sayısı · Yaklaşan ödemeler (liste)
+- **Mal Sahibi:** kendi mülklerine gelecek / gelen / geciken kira
+- **Kiracı:** sıradaki kendi ödemesi (ne zaman, ne kadar, durum)
+- **AÇIK SORU:** "toplam toplanacak kira" tanımı netleşecek — bu ay beklenen / şu an ödenmemiş toplam (geciken dahil) / tüm aktif sözleşmelerin aylık hacmi.
+- İleride: "Hatırlatmalar / Görevler" (sözleşme yenileme, kira artışı) kartı/sekmesi olabilir.
+
+### Gece Modu (en ağır iş — kendi adımı)
+Sadece toggle değil: açık/koyu **tema setleri** + tema context'i + tüm ekranların renkleri **tokendan** alması + tercihin **kaydedilmesi** (local). Bütün olarak yapılacak, yarım kalırsa ekranlar karışır.
+
+### Sıra (tek seferde değil — kontrollü)
+1. **Navigasyon + Profil/Ayarlar iskeleti** (çıkış buraya taşınır) — temel.
+2. **Hesabımı Sil** (delete-account Edge Function + UI) — Apple gerekliliği.
+3. **Ana Sayfa dashboard** — istatistikler.
+4. **Profil fotoğrafı** — avatar upload (Storage hazır).
+5. **Gece modu** — tema sistemi.
+
+### Apple hedefi
+Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi gerçek hesap silme + gizlilik politikası) kapatır. Apple Developer üyeliği onaylanınca iOS build + App Store submit kalır.
