@@ -32,7 +32,12 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
-  const role = getRole();
+  const [role, setRoleState] = useState(getRole());
+  useEffect(() => {
+    if (!role) {
+      auth.getCurrentUser().then(u => setRoleState(u?.role ?? null)).catch(() => {});
+    }
+  }, []);
   return (
     <Tab.Navigator
       screenOptions={{
