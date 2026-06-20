@@ -293,3 +293,11 @@ Sadece toggle değil: açık/koyu **tema setleri** + tema context'i + tüm ekran
 
 ### Apple hedefi
 Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi gerçek hesap silme + gizlilik politikası) kapatır. Apple Developer üyeliği onaylanınca iOS build + App Store submit kalır.
+
+### Step 1 — TAMAMLANDI (commit 57ed714; docs 1add383)
+- Alt sekme çubuğu (IG tarzı, ikon-only, role-aware) + ProfilScreen (avatar placeholder; Çıkış/Destek-WhatsApp/Hakkında aktif; gece modu/profil foto/hesap silme/KVKK "Yakında").
+- @react-navigation/bottom-tabs eklendi (JS, native rebuild yok). MainTabs App.tsx'te top-level; passwordRecoveryMode + ForcePasswordChange gate korundu.
+- Ödemeler sekmesi step 3'e ertelendi (OdemeTakip contractId zorunlu kılıyor).
+- Route 'Home' → 'AnaSayfa' (MainTabs içinde); tüm 'Home' referansları temizlendi (Login, Preview×2, Signup → MainTabs). Çıkış HomeScreen'den ProfilScreen'e taşındı.
+- Bug fix: Kişiler sekmesi emlakçıda reopen'da kayboluyordu (getRole senkron okunuyordu) → MainTabs'a reaktif rol yüklemesi (useState + useEffect + getCurrentUser fallback). navigate('Kisiler') hatası da bununla çözüldü.
+- tsc temiz (sadece beklenen supabase/functions Deno hataları), cihazda doğrulandı; production build henüz alınmadı.
