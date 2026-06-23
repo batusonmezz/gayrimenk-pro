@@ -250,7 +250,7 @@ B4.5. ✅ Storage cleanup + production — upload_dekont(uuid,text,text) drop (0
 
 ## Ana Uygulama Yenilemesi (Navigasyon + Profil/Ayarlar + Dashboard + Gece Modu)
 
-**Durum:** Planlandı, adım adım yapılacak. (Login redesign Push 1–2 bitti; Push 3 = hesap silme bu plana taşındı.)
+**Durum:** Step 1 (navigasyon + profil) + Step 2 (hesap silme) tamamlandı. Sırada Step 3 (Ana Sayfa dashboard).
 
 ### Navigasyon — alt sekme çubuğu (Instagram tarzı)
 - Alt tab bar, **ikon bazlı**, sade. Aktif = dolu ikon, pasif = outline. Flat, açık/koyu temaya uyumlu, ince üst çizgi.
@@ -285,14 +285,26 @@ Veriler `payments` + `contracts`'tan hesaplanır.
 Sadece toggle değil: açık/koyu **tema setleri** + tema context'i + tüm ekranların renkleri **tokendan** alması + tercihin **kaydedilmesi** (local). Bütün olarak yapılacak, yarım kalırsa ekranlar karışır.
 
 ### Sıra (tek seferde değil — kontrollü)
-1. **Navigasyon + Profil/Ayarlar iskeleti** (çıkış buraya taşınır) — temel.
-2. **Hesabımı Sil** (delete-account Edge Function + UI) — Apple gerekliliği.
-3. **Ana Sayfa dashboard** — istatistikler.
+1. ✅ **Navigasyon + Profil/Ayarlar iskeleti** — tamamlandı.
+2. ✅ **Hesabımı Sil** (delete-account Edge Function + UI) — tamamlandı.
+3. **Ana Sayfa dashboard** — istatistikler. ← SIRADA
 4. **Profil fotoğrafı** — avatar upload (Storage hazır).
 5. **Gece modu** — tema sistemi.
 
 ### Apple hedefi
 Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi gerçek hesap silme + gizlilik politikası) kapatır. Apple Developer üyeliği onaylanınca iOS build + App Store submit kalır.
+
+**Step 2 ile hesap silme blocker'ı karşılandı.** Apple Developer üyeliği onaylanınca iOS build + App Store submit kalır.
+
+### Step 2 — TAMAMLANDI
+- `delete-account` Edge Function deploy edildi (`supabase/functions/delete-account/`, `deno.json` import map ile `esm.sh/@supabase/supabase-js@2`).
+- Role-aware silme:
+  - **Member (kiraci/mal_sahibi):** auth soft-delete + `persons.user_id` unlink; org kayıtları/sözleşmeler/ödemeler/dekontlar korunur.
+  - **Owner (emlakci):** tam org cascade sırası: Storage (`kimlik-belgeleri` + `dekontlar`, orgId prefix) → contracts explicit delete (CASCADE: payments/contract_photos/contract_items) → auth hard-delete tüm org kullanıcıları → units → buildings → persons → organizations.
+- Güvenlik: caller JWT doğrulama (`getUser`), bilinmeyen rol guard (400), owner için `confirmation: 'SIL'` (ASCII; UI Türkçe İ'yi ASCII'ye eşler), member için `confirm: true`.
+- ProfilScreen "Hesabımı Sil" aktifleştirildi: role-aware onay modali; owner'da "SİL" TextInput (buton eşleşene kadar disabled), member'da basit onay; başarı → signOut → Welcome.
+- Test edildi (cihaz): member soft-delete (kiracı hesabı, login kapandı, org ayakta); owner cascade (Dashboard'dan throwaway emlakçı org'u, sözleşme + 2 kimlik foto ile, tam silindi).
+- Apple App Store hesap silme zorunluluğu (5.1.1(v)) artık karşılandı.
 
 ### Step 1 — TAMAMLANDI (commit 57ed714; docs 1add383)
 - Alt sekme çubuğu (IG tarzı, ikon-only, role-aware) + ProfilScreen (avatar placeholder; Çıkış/Destek-WhatsApp/Hakkında aktif; gece modu/profil foto/hesap silme/KVKK "Yakında").
