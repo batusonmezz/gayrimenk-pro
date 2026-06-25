@@ -160,6 +160,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü — ad+telefon, kimlik foto HAYIR)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
+- **Migration repo senkronu:** 016_storage_buckets / 017 (record_dekont) / 018 (upload_dekont drop) Supabase Dashboard'da uygulandı ama repo'da .sql dosyası yok. 019'dan itibaren repo senkron.
 
 **Ertelenmiş:**
 - **Faz 3.4 kalan** — `FormScreen` rol uyarlama (çok kompleks, ayrı faz)
@@ -334,6 +335,32 @@ Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi g
 - **SözleşmelerHub** (yeni sarmalayıcı): üstte segment kontrolü (Kayıtlı | Liste), seçime göre mevcut KayitlarScreen / ListeScreen render eder. Mevcut ekranlar değişmez.
 - **KisilerHub** (sadece emlakci): segment (Kişiler | Mal Sahipleri | Mülkler/Siteler), mevcut Kisiler / MalSahipleri / Siteler ekranlarını render eder. Mevcut ekranlar değişmez.
 - 3b'de AnaSayfa'daki geçici menü kısayolları + "Sözleşme oluştur" butonu kaldırılır (artık sekmelerden / +'dan ulaşılır).
+
+### Step 4 — TAMAMLANDI (Profil fotoğrafı / Avatar)
+
+**4-1 — Altyapı (migration 019_avatars.sql):**
+- avatars PUBLIC bucket + users.avatar_url TEXT kolonu.
+- RLS: okuma public; INSERT/UPDATE/DELETE sadece kendi dosyana (name LIKE auth.uid()::text || '.%').
+- Path şeması: {user_id}.{ext}, kök dizinde (klasör yok), upsert ile üzerine yazılır.
+- avatar_url kolonunda TAM URL değil path tutulur; client getPublicUrl ile türetir.
+- Supabase Dashboard'da uygulandı + repo'ya 019_avatars.sql olarak commit edildi.
+
+**4-2 — authState + auth.ts:**
+- AuthUser.avatarUrl alanı eklendi.
+- authState: getAvatarUrl/setAvatarUrl + subscribeAvatar mekanizması.
+- getCurrentUser + signIn avatar_url SELECT eder ve setAvatarUrl çağırır; signUp/signOut avatarUrl null/temizler.
+
+**4-3 — ProfilScreen avatar + upload:**
+- person-circle ikonu → avatar varsa yuvarlak Image, yoksa ikon (TouchableOpacity sarmalı).
+- "Profil Fotoğrafı" satırı "Yakında" badge'den TouchableOpacity'ye (chevron).
+- handleAvatarPress: expo-image-picker (aspect [1,1], base64) → base64-arraybuffer decode → avatars bucket upload (upsert) → users.avatar_url UPDATE → setAvatarUrl.
+- ProfilScreen içi cache-bust (cacheBust state) ile yeni foto anında görünür.
+
+**4b — Tab ikonu avatar (Instagram tarzı):**
+- authState'e subscribeAvatar mekanizması (4b-1): setAvatarUrl çağrılınca dinleyiciler tetiklenir, unsubscribe döner.
+- App.tsx ProfilTabIcon ayrı bileşen (4b-2): kendi subscribe'ı + state'i ile tab ikonunu reaktif render eder (Navigation options closure sorununu çözer). Avatar varsa yuvarlak foto (focused'da ince çerçeve), yoksa person-circle.
+- Cache-bust (4b-3): upsert aynı path'e yazdığı için URL değişmiyordu, Image eski fotoğrafı cache'liyordu. ProfilTabIcon subscribe her tetiklendiğinde cacheBust yenilenir, URL'e ?t={cacheBust} eklenir → fotoğraf değişince tab ikonu anında güncellenir.
+- Cihazda test edildi: fotoğraf yükle/değiştir → hem ProfilScreen hem tab ikonu anında güncelleniyor; kapat-aç kalıcı.
 
 ### Step 2 — TAMAMLANDI
 - `delete-account` Edge Function deploy edildi (`supabase/functions/delete-account/`, `deno.json` import map ile `esm.sh/@supabase/supabase-js@2`).
