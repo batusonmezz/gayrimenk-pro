@@ -12,8 +12,16 @@ export function setEmail(email: string | null): void { _email = email; }
 export function getEmail(): string | null { return _email; }
 
 let _avatarUrl: string | null = null;
-export function setAvatarUrl(v: string | null): void { _avatarUrl = v; }
+let _avatarListeners: Array<(v: string | null) => void> = [];
+export function setAvatarUrl(v: string | null): void {
+  _avatarUrl = v;
+  _avatarListeners.forEach(cb => cb(v));
+}
 export function getAvatarUrl(): string | null { return _avatarUrl; }
+export function subscribeAvatar(cb: (v: string | null) => void): () => void {
+  _avatarListeners.push(cb);
+  return () => { _avatarListeners = _avatarListeners.filter(l => l !== cb); };
+}
 
 let _mustChangePassword: boolean = false;
 export function setMustChangePassword(v: boolean): void { _mustChangePassword = v; }
