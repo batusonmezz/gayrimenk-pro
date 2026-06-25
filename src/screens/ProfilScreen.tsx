@@ -11,12 +11,15 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { decode } from 'base64-arraybuffer';
 import Constants from 'expo-constants';
 import { signOut, getCurrentUser } from '../services/auth';
-import { getRole, getEmail } from '../services/authState';
+import { getRole, getEmail, getAvatarUrl, setAvatarUrl } from '../services/authState';
 import { roleLabel } from '../utils/roleLabel';
 import { colors } from '../theme';
 import { supabase } from '../storage/supabaseClient';
@@ -29,6 +32,9 @@ export default function ProfilScreen() {
   const [silModalAcik, setSilModalAcik] = useState(false);
   const [silLoading, setSilLoading] = useState(false);
   const [onayGirdisi, setOnayGirdisi] = useState('');
+  const [avatarPath, setAvatarPath] = useState<string | null>(getAvatarUrl());
+  const [cacheBust, setCacheBust] = useState(Date.now());
+  const [uploading, setUploading] = useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -47,6 +53,48 @@ export default function ProfilScreen() {
   const handleDestek = () => {
     const msg = encodeURIComponent('Gayrimenkul yönetim sistemi hakkında destek almak istiyorum');
     Linking.openURL(`https://wa.me/${DESTEK_WHATSAPP}?text=${msg}`);
+  };
+
+  const handleAvatarPress = async () => {
+    const izin = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!izin.granted) {
+      Alert.alert('İzin gerekli', 'Galeri izni gerekli.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]?.base64) return;
+    const b64 = result.assets[0].base64;
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Oturum bulunamadı.');
+      const ext = b64.startsWith('iVBORw0K') ? 'png' : 'jpg';
+      const contentType = b64.startsWith('iVBORw0K') ? 'image/png' : 'image/jpeg';
+      const path = `${user.id}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, decode(b64), { contentType, upsert: true });
+      if (upErr) throw upErr;
+      const { error: dbErr } = await supabase
+        .from('users')
+        .update({ avatar_url: path })
+        .eq('id', user.id);
+      if (dbErr) throw dbErr;
+      setAvatarPath(path);
+      setAvatarUrl(path);
+      setCacheBust(Date.now());
+    } catch (e: any) {
+      console.error('[avatar] upload hata:', e);
+      Alert.alert('Hata', 'Fotoğraf yüklenemedi.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleHesapSil = async () => {
@@ -69,12 +117,31 @@ export default function ProfilScreen() {
 
   const versiyon = Constants.expoConfig?.version ?? '—';
   const isOwner = role === 'emlakci';
+  const avatarPublicUrl = avatarPath
+    ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data.publicUrl
+    : null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.profileHeader}>
-        <Ionicons name="person-circle" size={72} color={colors.primaryAccent} />
+        <TouchableOpacity onPress={handleAvatarPress} disabled={uploading} activeOpacity={0.7}
+          style={{ position: 'relative' }}>
+          {avatarPublicUrl ? (
+            <Image
+              source={{ uri: `${avatarPublicUrl}?t=${cacheBust}` }}
+              style={{ width: 72, height: 72, borderRadius: 36 }}
+            />
+          ) : (
+            <Ionicons name="person-circle" size={72} color={colors.primaryAccent} />
+          )}
+          {uploading && (
+            <ActivityIndicator
+              style={{ position: 'absolute', top: 26, left: 26 }}
+              color={colors.primaryAccent}
+            />
+          )}
+        </TouchableOpacity>
         <Text style={styles.emailText}>{email ?? ''}</Text>
         <View style={styles.roleBadge}>
           <Text style={styles.roleBadgeText}>{roleLabel(role)}</Text>
@@ -107,11 +174,11 @@ export default function ProfilScreen() {
             <View style={styles.soonBadge}><Text style={styles.soonText}>Yakında</Text></View>
           </View>
           <View style={styles.rowDivider} />
-          <View style={styles.row}>
-            <Ionicons name="camera-outline" size={20} color={colors.textFaint} style={styles.rowIcon} />
-            <Text style={[styles.rowLabel, styles.dimmed]}>Profil Fotoğrafı</Text>
-            <View style={styles.soonBadge}><Text style={styles.soonText}>Yakında</Text></View>
-          </View>
+          <TouchableOpacity style={styles.row} onPress={handleAvatarPress} activeOpacity={0.7}>
+            <Ionicons name="camera-outline" size={20} color={colors.primaryAccent} style={styles.rowIcon} />
+            <Text style={styles.rowLabel}>Profil Fotoğrafı</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+          </TouchableOpacity>
           <View style={styles.rowDivider} />
           <View style={styles.row}>
             <Ionicons name="document-text-outline" size={20} color={colors.textFaint} style={styles.rowIcon} />
