@@ -304,6 +304,12 @@ Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi g
 - Eski menü kısayolları ve "Sözleşme oluştur" HomeScreen'de **GEÇİCİ** duruyor; 3b'de kaldırılacak.
 - Test edildi (cihaz — emlakçı): kartlar, kuruş formatı doğru, geciken kırmızı, focus-refresh + pull-to-refresh, alttaki menü korundu.
 
+### Step 3b-1 — TAMAMLANDI (Hub ekranları)
+- `src/components/HubSegmentBar.tsx`: Underline segment bar bileşeni. Props: `tabs`/`activeIndex`/`onTabPress`. `PRIMARY='#0f6e56'`. Animasyon yok, SafeAreaView yok.
+- `src/screens/SozlesmelerHub.tsx`: Kayıtlı | Liste segmentli sarmalayıcı. `KayitlarScreen` + `ListeScreen`'i `navigation` prop geçerek render eder.
+- `src/screens/KisilerHub.tsx`: Kişiler | Mal Sahipleri | Mülkler segmentli sarmalayıcı. `KisilerScreen` + `MalSahibiScreen` + `SitelerScreen`'i `navigation` prop geçerek render eder. Rol kısıtı yok — 3b-2'de tab düzeyinde uygulanacak.
+- Henüz hiçbir navigator'a bağlı değil. Uygulama davranışı değişmedi. tsc temiz.
+
 ### Step 3b — SIRADA (Navigasyon Yeniden Düzeni)
 - **Tab yapısı:**
   - Emlakçı: Ana Sayfa · Sözleşmeler · **[+]** · Kişiler · Profil. Ortadaki + doğrudan Form (sözleşme oluştur) açar.
