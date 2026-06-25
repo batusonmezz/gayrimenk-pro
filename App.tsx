@@ -33,6 +33,35 @@ const Tab = createBottomTabNavigator();
 
 const EmptyScreen = () => null;
 
+function ProfilTabIcon({ color, focused }: { color: string; focused: boolean }) {
+  const [avatarPath, setAvatarPath] = useState<string | null>(getAvatarUrl());
+  const [cacheBust, setCacheBust] = useState(Date.now());
+  useEffect(() => {
+    const unsub = subscribeAvatar((v) => {
+      setAvatarPath(v);
+      setCacheBust(Date.now());
+    });
+    return unsub;
+  }, []);
+  const avatarPublicUrl = avatarPath
+    ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data.publicUrl
+    : null;
+  return avatarPublicUrl ? (
+    <Image
+      source={{ uri: `${avatarPublicUrl}?t=${cacheBust}` }}
+      style={{
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        borderWidth: focused ? 2 : 0,
+        borderColor: color,
+      }}
+    />
+  ) : (
+    <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} />
+  );
+}
+
 function MainTabs() {
   const [role, setRoleState] = useState(getRole());
   useEffect(() => {
@@ -40,14 +69,6 @@ function MainTabs() {
       auth.getCurrentUser().then(u => setRoleState(u?.role ?? null)).catch(() => {});
     }
   }, []);
-  const [avatarPath, setAvatarPath] = useState<string | null>(getAvatarUrl());
-  useEffect(() => {
-    const unsub = subscribeAvatar(setAvatarPath);
-    return unsub;
-  }, []);
-  const avatarPublicUrl = avatarPath
-    ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data.publicUrl
-    : null;
   return (
     <Tab.Navigator
       screenOptions={{
@@ -131,21 +152,7 @@ function MainTabs() {
         name="Profil"
         component={ProfilScreen}
         options={{
-          tabBarIcon: ({ color, focused }) =>
-            avatarPublicUrl ? (
-              <Image
-                source={{ uri: avatarPublicUrl }}
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 13,
-                  borderWidth: focused ? 2 : 0,
-                  borderColor: color,
-                }}
-              />
-            ) : (
-              <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} />
-            ),
+          tabBarIcon: ({ color, focused }) => <ProfilTabIcon color={color} focused={focused} />,
         }}
       />
     </Tab.Navigator>
