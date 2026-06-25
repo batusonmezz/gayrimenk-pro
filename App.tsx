@@ -16,12 +16,12 @@ import HomeScreen from './src/screens/HomeScreen';
 import FormScreen from './src/screens/FormScreen';
 import PreviewScreen from './src/screens/PreviewScreen';
 import ResearchScreen from './src/screens/ResearchScreen';
-import KayitlarScreen from './src/screens/KayitlarScreen';
 import MalSahibiScreen from './src/screens/MalSahibiScreen';
 import ListeScreen from './src/screens/ListeScreen';
 import OdemeTakipScreen from './src/screens/OdemeTakipScreen';
 import SitelerScreen from './src/screens/SitelerScreen';
-import KisilerScreen from './src/screens/KisilerScreen';
+import SozlesmelerHub from './src/screens/SozlesmelerHub';
+import KisilerHub from './src/screens/KisilerHub';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
@@ -30,6 +30,8 @@ import ProfilScreen from './src/screens/ProfilScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const EmptyScreen = () => null;
 
 function MainTabs() {
   const [role, setRoleState] = useState(getRole());
@@ -50,6 +52,7 @@ function MainTabs() {
           borderTopWidth: 0.5,
           borderTopColor: colors.borderFaint,
           elevation: 0,
+          overflow: 'visible',
         },
       }}
     >
@@ -61,16 +64,59 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Kayitlar"
-        component={KayitlarScreen}
-        options={{ tabBarIcon: ({ color, focused }) =>
-          <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} /> }}
+        component={SozlesmelerHub}
+        options={{
+          headerShown: false,
+          tabBarLabel: 'Sözleşmeler',
+          tabBarIcon: ({ color, focused }) =>
+            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} />,
+        }}
       />
       {role === 'emlakci' && (
         <Tab.Screen
+          name="YeniSozlesme"
+          component={EmptyScreen}
+          options={{
+            tabBarLabel: () => null,
+            tabBarIcon: () => (
+              <View style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: colors.primaryAccent,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 8,
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.20,
+                shadowRadius: 3,
+              }}>
+                <Ionicons name="add" size={28} color="#fff" />
+              </View>
+            ),
+          }}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault();
+              navigation.navigate('Form', {
+                type: 'kira',
+                title: 'Kira Sözleşmesi',
+              });
+            },
+          })}
+        />
+      )}
+      {role === 'emlakci' && (
+        <Tab.Screen
           name="Kisiler"
-          component={KisilerScreen}
-          options={{ tabBarIcon: ({ color, focused }) =>
-            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} /> }}
+          component={KisilerHub}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) =>
+              <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />,
+          }}
         />
       )}
       <Tab.Screen
