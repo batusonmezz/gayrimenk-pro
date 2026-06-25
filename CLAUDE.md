@@ -319,7 +319,15 @@ Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi g
 - tsc temiz, sadece App.tsx değişti.
 - AnaSayfa'daki geçici menü kısayolları hâlâ duruyor — 3b-3'te kaldırılacak.
 
-### Step 3b — SIRADA (Navigasyon Yeniden Düzeni)
+### Step 3b-3 — TAMAMLANDI (HomeScreen temizliği)
+- `CONTRACT_TYPES` sabiti, `navigation` prop, `isEmlakci`, `isMalSahibiVeyaEmlakci` değişkenleri kaldırıldı.
+- `menuSection` View bloğu ve 6 navigasyon kısayolu (Research, Kayitlar, Liste, MalSahipleri, Siteler, Kisiler) kaldırıldı.
+- 13 kullanılmaz stil girdisi kaldırıldı.
+- Header title "Sözleşmeler" → "Ana Sayfa" güncellendi.
+- HomeScreen artık saf dashboard — navigasyon tab'lardan ve [+] butonundan yapılıyor.
+- tsc temiz. 133 satır silindi.
+
+### Step 3b — TAMAMLANDI
 - **Tab yapısı:**
   - Emlakçı: Ana Sayfa · Sözleşmeler · **[+]** · Kişiler · Profil. Ortadaki + doğrudan Form (sözleşme oluştur) açar.
   - Mal sahibi / kiracı: Ana Sayfa · Sözleşmeler · Profil (mülk/kişi yönetmez, oluşturamaz; + yok).
