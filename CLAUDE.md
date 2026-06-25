@@ -310,6 +310,15 @@ Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi g
 - `src/screens/KisilerHub.tsx`: Kişiler | Mal Sahipleri | Mülkler segmentli sarmalayıcı. `KisilerScreen` + `MalSahibiScreen` + `SitelerScreen`'i `navigation` prop geçerek render eder. Rol kısıtı yok — 3b-2'de tab düzeyinde uygulanacak.
 - Henüz hiçbir navigator'a bağlı değil. Uygulama davranışı değişmedi. tsc temiz.
 
+### Step 3b-2 — TAMAMLANDI (Tab navigator güncellemesi)
+- App.tsx: `KayitlarScreen`/`KisilerScreen` import'ları kaldırıldı, `SozlesmelerHub` + `KisilerHub` eklendi.
+- `Kayitlar` Tab.Screen → `SozlesmelerHub` (`headerShown:false`, `tabBarLabel:'Sözleşmeler'`).
+- `Kisiler` Tab.Screen → `KisilerHub` (`headerShown:false`, emlakci-only).
+- `YeniSozlesme` Tab.Screen eklendi (emlakci-only): `EmptyScreen` + `tabPress` listener → `navigate('Form', {type:'kira'})`. İkon: 52px yeşil circle, Ionicons `add`.
+- `tabBarStyle`'a `overflow:'visible'` eklendi (circle kesilmesin).
+- tsc temiz, sadece App.tsx değişti.
+- AnaSayfa'daki geçici menü kısayolları hâlâ duruyor — 3b-3'te kaldırılacak.
+
 ### Step 3b — SIRADA (Navigasyon Yeniden Düzeni)
 - **Tab yapısı:**
   - Emlakçı: Ana Sayfa · Sözleşmeler · **[+]** · Kişiler · Profil. Ortadaki + doğrudan Form (sözleşme oluştur) açar.
