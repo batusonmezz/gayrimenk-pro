@@ -287,7 +287,7 @@ Sadece toggle değil: açık/koyu **tema setleri** + tema context'i + tüm ekran
 ### Sıra (tek seferde değil — kontrollü)
 1. ✅ **Navigasyon + Profil/Ayarlar iskeleti** — tamamlandı.
 2. ✅ **Hesabımı Sil** (delete-account Edge Function + UI) — tamamlandı.
-3. **Ana Sayfa dashboard + Navigasyon yeniden düzeni** — 3a + 3b olarak iki adımda. ← SIRADA
+3. **Ana Sayfa dashboard + Navigasyon yeniden düzeni** — 3a tamamlandı; 3b sırada. ← SIRADA
 4. **Profil fotoğrafı** — avatar upload (Storage hazır).
 5. **Gece modu** — tema sistemi.
 
@@ -296,21 +296,15 @@ Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi g
 
 **Step 2 ile hesap silme blocker'ı karşılandı.** Apple Developer üyeliği onaylanınca iOS build + App Store submit kalır.
 
-### Step 3 — PLANLANACAK (iki alt adım)
+### Step 3a — TAMAMLANDI
+- `get_dashboard_stats()` RPC (`supabase/migrations/016_dashboard_stats.sql`) deploy edildi: role-aware (`emlakci`/`mal_sahibi`/`kiraci`), `SECURITY DEFINER`, kuruş cinsinden JSONB döner.
+- Ödeme kovaları (örtüşmez, sadece `tip='kira'`): tahsil edilen (`durum='odendi'`, `odeme_tarihi` bu ay) · bekleyen (`durum='beklemede'`, vade bu ay/gelecek) · geciken (`durum='beklemede'`, vade geçmiş).
+- `HomeScreen` role-aware ikonlu kartlar + yaklaşan ödemeler (7 gün) listesine dönüştü. `useFocusEffect` ile sekme focus'ta otomatik yenileme + pull-to-refresh. Kuruş→TL çevirimi ekranda (`/100`, `tr-TR` format).
+- "Aktif sözleşme" yerine **"Toplam Sözleşme"** gösteriliyor — aktiflik kolonu yok; gerçek aktif tanımı TEFE-TUFE kira yenileme adımına ertelendi.
+- Eski menü kısayolları ve "Sözleşme oluştur" HomeScreen'de **GEÇİCİ** duruyor; 3b'de kaldırılacak.
+- Test edildi (cihaz — emlakçı): kartlar, kuruş formatı doğru, geciken kırmızı, focus-refresh + pull-to-refresh, alttaki menü korundu.
 
-#### Step 3a — Ana Sayfa Dashboard (önce)
-- **Yeni RPC:** `get_dashboard_stats()` — DB'de `SECURITY DEFINER`, `auth_role()` + `auth_org_id()` ile role göre filtreli özet JSON döner.
-  - Emlakçı filtresi: org'daki tüm contracts; mal_sahibi: `contracts.mal_sahibi_user_id = auth.uid()`; kiracı: `contracts.kiraci_user_id = auth.uid()`.
-  - Ödeme kovaları (örtüşmez): tahsil edilen (`durum='odendi'`), bekleyen (vadesi gelmemiş + ödenmemiş), geciken (vadesi geçmiş + ödenmemiş).
-- **Role göre kartlar:**
-  - Emlakçı: bu ay tahsil edilen · bu ay bekleyen · geciken (tutar + adet, kırmızı) · onay bekleyen dekont (adet) · aktif sözleşme (adet) · yaklaşan ödemeler listesi (7 gün).
-  - Mal sahibi: bu ay alacağı · tahsil edilen · geciken (tutar + adet) · onay bekleyen dekont (adet) · kiracılarından yaklaşan ödemeler (7 gün).
-  - Kiracı: sonraki ödeme (tarih + tutar) · yıllık ödenen + kalan tutar · gecikme uyarısı · onay bekleyen dekont durumu.
-- AnaSayfa sekmesi (eski HomeScreen) role-aware kart grid + yaklaşan ödemeler listesine dönüşür.
-- **ÖNEMLİ:** Eski menü kısayolları (Kişiler / Kayıtlı Sözleşmeler / Mal Sahipleri) ve "Sözleşme oluştur" butonu 3a'da GEÇİCİ olarak KALIR (erişim kopmasın); 3b'de temizlenir.
-- **Açık karar:** `payments` tablo kolon adları + status değerleri RPC yazılmadan önce migration'lardan teyit edilecek (`vade_tarihi`, `tutar_kurus`, `durum`, `mal_sahibi_user_id`, `kiraci_user_id`).
-
-#### Step 3b — Navigasyon Yeniden Düzeni (sonra)
+### Step 3b — SIRADA (Navigasyon Yeniden Düzeni)
 - **Tab yapısı:**
   - Emlakçı: Ana Sayfa · Sözleşmeler · **[+]** · Kişiler · Profil. Ortadaki + doğrudan Form (sözleşme oluştur) açar.
   - Mal sahibi / kiracı: Ana Sayfa · Sözleşmeler · Profil (mülk/kişi yönetmez, oluşturamaz; + yok).
