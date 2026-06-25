@@ -1,5 +1,5 @@
 import { supabase } from '../storage/supabaseClient';
-import { setOrganizationId, setRole, setEmail, setMustChangePassword } from './authState';
+import { setOrganizationId, setRole, setEmail, setMustChangePassword, setAvatarUrl } from './authState';
 import type { User } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -7,6 +7,7 @@ export interface AuthUser {
   organizationId: string | null;
   role: string | null;
   mustChangePassword: boolean;
+  avatarUrl: string | null;
 }
 
 export interface SignUpResult extends AuthUser {
@@ -28,7 +29,7 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   if (!authData.user) throw new Error('Kayıt tamamlanamadı.');
 
   if (authData.session === null) {
-    return { user: authData.user, organizationId: null, role: null, mustChangePassword: false, needsEmailConfirmation: true };
+    return { user: authData.user, organizationId: null, role: null, mustChangePassword: false, avatarUrl: null, needsEmailConfirmation: true };
   }
 
   const { data: userRecord, error: userFetchError } = await supabase
@@ -49,7 +50,8 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   setRole(userRole);
   setEmail(authData.user.email ?? null);
   setMustChangePassword(false);
-  return { user: authData.user, organizationId: orgId, role: userRole, mustChangePassword: false, needsEmailConfirmation: false };
+  setAvatarUrl(null);
+  return { user: authData.user, organizationId: orgId, role: userRole, mustChangePassword: false, avatarUrl: null, needsEmailConfirmation: false };
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -59,18 +61,20 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id, role, must_change_password')
+    .select('organization_id, role, must_change_password, avatar_url')
     .eq('id', data.user.id)
     .single();
 
   const orgId = userRecord?.organization_id ?? null;
   const userRole = userRecord?.role ?? null;
   const mustChangePw = userRecord?.must_change_password ?? false;
+  const avatarUrl = userRecord?.avatar_url ?? null;
   setOrganizationId(orgId);
   setRole(userRole);
   setEmail(data.user.email ?? null);
   setMustChangePassword(mustChangePw);
-  return { user: data.user, organizationId: orgId, role: userRole, mustChangePassword: mustChangePw };
+  setAvatarUrl(avatarUrl);
+  return { user: data.user, organizationId: orgId, role: userRole, mustChangePassword: mustChangePw, avatarUrl };
 }
 
 export async function signOut(): Promise<void> {
@@ -79,6 +83,7 @@ export async function signOut(): Promise<void> {
   setOrganizationId(null);
   setRole(null);
   setEmail(null);
+  setAvatarUrl(null);
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -87,7 +92,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id, role, must_change_password')
+    .select('organization_id, role, must_change_password, avatar_url')
     .eq('id', user.id)
     .single();
 
@@ -97,10 +102,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   const userRole = userRecord?.role ?? null;
   const mustChangePw = userRecord?.must_change_password ?? false;
+  const avatarUrl = userRecord?.avatar_url ?? null;
   setRole(userRole);
   setEmail(user.email ?? null);
   setMustChangePassword(mustChangePw);
-  return { user, organizationId: userRecord?.organization_id ?? null, role: userRole, mustChangePassword: mustChangePw };
+  setAvatarUrl(avatarUrl);
+  return { user, organizationId: userRecord?.organization_id ?? null, role: userRole, mustChangePassword: mustChangePw, avatarUrl };
 }
 
 export async function getSession(): Promise<boolean> {
