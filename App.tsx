@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -10,7 +10,7 @@ import { colors } from './src/theme';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
 import * as auth from './src/services/auth';
-import { setOrganizationId, setRole, setMustChangePassword, getRole } from './src/services/authState';
+import { setOrganizationId, setRole, setMustChangePassword, getRole, getAvatarUrl, subscribeAvatar } from './src/services/authState';
 import ForcePasswordChangeScreen from './src/screens/ForcePasswordChangeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import FormScreen from './src/screens/FormScreen';
@@ -40,6 +40,14 @@ function MainTabs() {
       auth.getCurrentUser().then(u => setRoleState(u?.role ?? null)).catch(() => {});
     }
   }, []);
+  const [avatarPath, setAvatarPath] = useState<string | null>(getAvatarUrl());
+  useEffect(() => {
+    const unsub = subscribeAvatar(setAvatarPath);
+    return unsub;
+  }, []);
+  const avatarPublicUrl = avatarPath
+    ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data.publicUrl
+    : null;
   return (
     <Tab.Navigator
       screenOptions={{
@@ -122,8 +130,23 @@ function MainTabs() {
       <Tab.Screen
         name="Profil"
         component={ProfilScreen}
-        options={{ tabBarIcon: ({ color, focused }) =>
-          <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} /> }}
+        options={{
+          tabBarIcon: ({ color, focused }) =>
+            avatarPublicUrl ? (
+              <Image
+                source={{ uri: avatarPublicUrl }}
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 13,
+                  borderWidth: focused ? 2 : 0,
+                  borderColor: color,
+                }}
+              />
+            ) : (
+              <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} />
+            ),
+        }}
       />
     </Tab.Navigator>
   );
