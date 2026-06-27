@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   // ── Arka planlar ─────────────────────────────────────────
   background:     '#f5f5f0',   // ana ekran zemini (sıcak beyaz)
   surface:        '#ffffff',   // kart / modal yüzeyi
@@ -39,4 +39,35 @@ export const colors = {
   headerMuted:    'rgba(255,255,255,0.50)',  // soluk header yazısı
 } as const;
 
-export type ColorKey = keyof typeof colors;
+export type ColorKey = keyof typeof lightColors;
+
+export const darkColors: Record<ColorKey, string> = {
+  background:     '#121212',
+  surface:        '#1e1e1e',
+  surfaceAlt:     '#242424',
+  surfaceSubtle:  '#2a2a2a',
+  primary:        '#0d1f0d',
+  primaryAccent:  '#1d9e75',
+  text:           '#e8e8e8',
+  textSecondary:  '#b0b0b0',
+  textMuted:      '#888888',
+  textFaint:      '#6a6a6a',
+  textOnPrimary:  '#e8e8e8',
+  placeholder:    '#5a5a5a',
+  border:         '#333333',
+  borderLight:    '#3a3a3a',
+  borderFaint:    '#2a2a2a',
+  success:        '#4caf50',
+  warning:        '#ff9800',
+  error:          '#ef5350',
+  successSurface: '#1b3a1f',
+  warningSurface: '#3a2a14',
+  errorSurface:   '#3a1f1f',
+  accentSurface:  '#13322a',
+  badge:          'rgba(255,255,255,0.10)',
+  badgeText:      '#9fe1cb',
+  headerMuted:    'rgba(255,255,255,0.50)',
+};
+
+// Geriye uyumluluk: mevcut statik importlar bozulmasın.
+export const colors = lightColors;

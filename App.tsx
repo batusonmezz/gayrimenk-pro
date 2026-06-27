@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from './src/theme';
+import { colors, ThemeProvider } from './src/theme';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
 import * as auth from './src/services/auth';
@@ -164,7 +164,7 @@ const screenOptions = {
   cardStyle: { flex: 1, overflow: 'auto' as any },
 };
 
-export default function App() {
+function AppInner() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePasswordState] = useState(false);
@@ -276,5 +276,13 @@ export default function App() {
         </NavigationContainer>
       </View>
     </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
   );
 }
