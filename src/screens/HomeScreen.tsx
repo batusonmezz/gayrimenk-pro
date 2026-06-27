@@ -15,7 +15,7 @@ import { getCurrentUser } from '../services/auth';
 import { getRole, getEmail } from '../services/authState';
 import { roleLabel } from '../utils/roleLabel';
 import { supabase } from '../storage/supabaseClient';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 const KISA_AYLAR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
@@ -34,6 +34,8 @@ function StatKart({ icon, iconColor, rakam, etiket, bgColor }: {
   etiket: string;
   bgColor?: string;
 }) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   return (
     <View style={[
       styles.statKart,
@@ -54,6 +56,8 @@ function StatKart({ icon, iconColor, rakam, etiket, bgColor }: {
 }
 
 function YaklasanList({ yaklasan }: { yaklasan: any[] | null }) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   return (
     <View style={styles.yaklasanBolum}>
       <Text style={styles.sectionLabel}>YAKLASAN ÖDEMELER (7 GÜN)</Text>
@@ -77,6 +81,8 @@ function YaklasanList({ yaklasan }: { yaklasan: any[] | null }) {
 }
 
 export default function HomeScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const [email, setEmailState] = useState<string | null>(null);
   const [role, setRoleState] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
@@ -336,17 +342,17 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header:         { backgroundColor: '#1a2e1a', paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
-  brand:          { color: 'rgba(255,255,255,0.5)', fontSize: 11, letterSpacing: 2, marginBottom: 4 },
-  title:          { color: '#fff', fontSize: 24, fontWeight: '500' },
-  sectionLabel:   { fontSize: 11, letterSpacing: 1.5, color: '#888', marginVertical: 12, fontWeight: '500' },
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
+  container:      { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+  header:         { backgroundColor: colors.primary, paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
+  brand:          { color: colors.headerMuted, fontSize: 11, letterSpacing: 2, marginBottom: 4 },
+  title:          { color: colors.textOnPrimary, fontSize: 24, fontWeight: '500' },
+  sectionLabel:   { fontSize: 11, letterSpacing: 1.5, color: colors.textMuted, marginVertical: 12, fontWeight: '500' },
   headerTop:      { flexDirection: 'row', alignItems: 'center' },
   userInfo:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, marginBottom: 4 },
   userEmail:      { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
   roleBadge:      { backgroundColor: 'rgba(159,225,203,0.15)', borderWidth: 1, borderColor: 'rgba(159,225,203,0.35)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
-  roleBadgeText:  { color: '#9fe1cb', fontSize: 11 },
+  roleBadgeText:  { color: colors.badgeText, fontSize: 11 },
 
   // Dashboard
   dashSection:    { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 },
@@ -367,7 +373,7 @@ const styles = StyleSheet.create({
   yukleniyorBox:  { paddingVertical: 32, alignItems: 'center' },
   hataBox:        { paddingVertical: 24, alignItems: 'center', paddingHorizontal: 16 },
   hataMesaji:     { fontSize: 14, color: colors.error, textAlign: 'center', marginBottom: 12 },
-  tekrarBtn:      { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 },
+  tekrarBtn:      { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 },
   tekrarBtnText:  { color: colors.textOnPrimary, fontSize: 14, fontWeight: '500' },
   boshMetin:      { fontSize: 13, color: colors.textFaint, textAlign: 'center', paddingVertical: 16 },
 });
