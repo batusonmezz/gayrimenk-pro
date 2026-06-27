@@ -21,12 +21,14 @@ import Constants from 'expo-constants';
 import { signOut, getCurrentUser } from '../services/auth';
 import { getRole, getEmail, getAvatarUrl, setAvatarUrl } from '../services/authState';
 import { roleLabel } from '../utils/roleLabel';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 import { supabase } from '../storage/supabaseClient';
 
 const DESTEK_WHATSAPP = '905449444108';
 
 export default function ProfilScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const [email, setEmailState] = useState<string | null>(getEmail);
   const [role, setRoleState] = useState<string | null>(getRole);
   const [silModalAcik, setSilModalAcik] = useState(false);
@@ -265,7 +267,7 @@ export default function ProfilScreen() {
                 activeOpacity={0.7}
               >
                 {silLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.textOnPrimary} />
                 ) : (
                   <Text style={styles.modalBtnSilText}>
                     {isOwner ? 'Kalıcı Olarak Sil' : 'Hesabımı Sil'}
@@ -280,7 +282,7 @@ export default function ProfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -434,7 +436,7 @@ const styles = StyleSheet.create({
   modalBtnSilText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#fff',
+    color: colors.textOnPrimary,
   },
   modalBtnDisabled: {
     opacity: 0.4,

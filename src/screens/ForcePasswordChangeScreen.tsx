@@ -13,9 +13,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../storage/supabaseClient';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 export default function ForcePasswordChangeScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const [yeniSifre, setYeniSifre] = useState('');
   const [sifre2, setSifre2] = useState('');
   const [loading, setLoading] = useState(false);
@@ -148,7 +150,7 @@ export default function ForcePasswordChangeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? colors.primaryAccent : colors.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
