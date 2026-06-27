@@ -362,6 +362,55 @@ Bu yenileme + hesap silme, Apple'ın istediği büyük şeyleri (uygulama içi g
 - Cache-bust (4b-3): upsert aynı path'e yazdığı için URL değişmiyordu, Image eski fotoğrafı cache'liyordu. ProfilTabIcon subscribe her tetiklendiğinde cacheBust yenilenir, URL'e ?t={cacheBust} eklenir → fotoğraf değişince tab ikonu anında güncellenir.
 - Cihazda test edildi: fotoğraf yükle/değiştir → hem ProfilScreen hem tab ikonu anında güncelleniyor; kapat-aç kalıcı.
 
+### Step 5 — Gece Modu (DEVAM EDIYOR)
+
+**Hedef:** Acik/koyu tema. ThemeContext + useTheme, tum ekranlar token'dan
+renk alir, tercih AsyncStorage'da kalici. Toggle ProfilScreen'de (su an
+"Yakinda").
+
+**Onaylanan dark palet:** background #121212, surface #1e1e1e, primary
+#0d1f0d, primaryAccent #1d9e75, text #e8e8e8, success #4caf50, error
+#ef5350, warning #ff9800 (tam set src/theme/colors.ts darkColors'da).
+
+**5-1 — TAMAMLANDI (tema altyapisi):**
+- src/theme/colors.ts: lightColors + darkColors (26 anahtar, Record<ColorKey,string>),
+  geriye uyumluluk icin `export const colors = lightColors` korundu.
+- src/theme/ThemeContext.tsx (YENI): ThemeProvider + useTheme hook.
+  mode 'light'|'dark'|'system', useColorScheme (sistem), AsyncStorage
+  '@theme_mode' kalici tercih. isDark hesabi + aktif colors secimi.
+- src/theme/index.ts: lightColors/darkColors/ThemeProvider/useTheme/ThemeMode
+  export edildi, eski colors/ColorKey korundu.
+- App.tsx: App -> AppInner, disina ThemeProvider sarmasi.
+- AsyncStorage paketi kuruldu (@react-native-async-storage/async-storage@2.2.0).
+  Kurulum sirasinda expo-font duplicate sorunu cikti; `npx expo install expo-font`
+  + `expo install --fix` + node_modules temiz kurulum ile cozuldu (expo-doctor 18/18).
+  Native modul oldugu icin yeni EAS dev-client build alindi.
+- Cihazda test: hata yok, gorunum birebir eski (hicbir ekran henuz useTheme
+  kullanmiyor, hepsi statik light colors). Avatar calisiyor.
+
+**Kritik prensip — her commit'te tutarli:** Statik `colors` (= lightColors)
+hala export ediliyor. Ekranlar useTheme'e GRUP GRUP gecirilecek; her grup
+ayri commit + cihaz testi. Toggle EN SONDA baglanacak (o ana kadar tum
+ekranlar token'a gecmis olacak, hicbir yer karismayacak).
+
+**Test yontemi:** Toggle bitene kadar dark mode telefon SISTEM temasi ile
+test edilir (mode='system' sayesinde useTheme'e gecmis ekranlar otomatik koyu olur).
+
+**Kalan adimlar (roadmap):**
+- 5-2 ve sonrasi: 8 "temiz" ekran (zaten colors import eden: HomeScreen,
+  ProfilScreen, LoginScreen, SignupScreen, WelcomeScreen, ForgotPassword,
+  ResetPassword, ForcePasswordChange) + HubSegmentBar -> useTheme'e gecir.
+  Mekanik (import { colors } -> const { colors } = useTheme()).
+- Sonra: ~370 hard-coded renkli AGIR ekranlar (FormScreen ~88, OdemeTakip ~56,
+  Kisiler ~45, Liste ~36, Siteler ~28, MalSahibi ~26, Preview ~25, Kayitlar ~19,
+  Research ~18, kucuk bilesenler) grup grup token'a cevrilir. Cift-set durum
+  renkleri (#27ae60/#2e7d32 vb.) birlestirilir.
+- Son: StatusBar reaktif (8 dosya sabit) + ProfilScreen "Gece Modu" toggle'i
+  gercek (light/dark/system secimi) + App.tsx loading dali hard-coded '#f5f5f0'.
+
+**ACIK BORC (onceden):** Migration repo senkronu — 016_storage_buckets/017/018
+Dashboard'da var, repo'da .sql yok. 019'dan itibaren senkron.
+
 ### Step 2 — TAMAMLANDI
 - `delete-account` Edge Function deploy edildi (`supabase/functions/delete-account/`, `deno.json` import map ile `esm.sh/@supabase/supabase-js@2`).
 - Role-aware silme:
