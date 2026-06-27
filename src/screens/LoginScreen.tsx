@@ -14,13 +14,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signIn } from '../services/auth';
 import { roleLabel } from '../utils/roleLabel';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 const DESTEK_WHATSAPP = '905449444108'; // TODO: numara girilecek
 
 type Props = { navigation: any; route: any };
 
 export default function LoginScreen({ navigation, route }: Props) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const role: 'emlakci' | 'mal_sahibi' | 'kiraci' = route.params?.role ?? 'emlakci';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -157,7 +159,8 @@ export default function LoginScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? colors.primaryAccent : colors.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
