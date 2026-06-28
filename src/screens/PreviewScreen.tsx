@@ -5,10 +5,14 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { sozlesmeKaydet, sozlesmeGuncelle } from '../services/storage';
 import { VARSAYILAN_OZEL_MADDELER, VARSAYILAN_GENEL_MADDELER } from '../constants/prompts';
+import { useTheme } from '../theme';
 
 export default function PreviewScreen({ navigation, route }: any) {
   const { sozlesme, title, formData, kayitId } = route.params;
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+
   const fotograflar = route.params?.fotograflar || {};
   const esyaListesi: { ad: string; marka: string; adet: string }[] = route.params?.esyaListesi || [];
   const kiraciPersonId: string | null = route.params?.kiraciPersonId ?? null;
@@ -141,16 +145,16 @@ export default function PreviewScreen({ navigation, route }: any) {
           <View style={styles.chatMessages}>
             {messages.map((msg, i) => (
               <View key={i} style={[styles.chatMsg, msg.role === 'user' ? styles.userMsg : styles.aiMsg]}>
-                <Text style={[styles.chatMsgText, msg.role === 'user' && { color: '#fff' }]}>{msg.text}</Text>
+                <Text style={[styles.chatMsgText, msg.role === 'user' && { color: colors.textOnPrimary }]}>{msg.text}</Text>
               </View>
             ))}
-            {loading && <ActivityIndicator style={{ margin: 8 }} color="#1a2e1a" />}
+            {loading && <ActivityIndicator style={{ margin: 8 }} color={isDark ? colors.primaryAccent : colors.primary} />}
           </View>
           <View style={styles.chatInputRow}>
             <TextInput
               style={styles.chatInput}
               placeholder="Örn: 3. maddeyi değiştir..."
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.placeholder}
               value={chatInput}
               onChangeText={setChatInput}
               onSubmitEditing={sendChat}
@@ -170,28 +174,28 @@ export default function PreviewScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#fff', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 0.5, borderBottomColor: '#e0e0e0' },
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+  header: { backgroundColor: colors.surface, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#555', lineHeight: 32 },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: '#1a1a1a' },
+  backText: { fontSize: 28, color: colors.textSecondary, lineHeight: 32 },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
   content: { flex: 1, padding: 12 },
-  contractBox: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  contractBrand: { textAlign: 'center', fontSize: 10, letterSpacing: 2, color: '#aaa', marginBottom: 12 },
-  contractText: { fontSize: 13, lineHeight: 22, color: '#333' },
-  chatBox: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: '#e0e0e0', overflow: 'hidden' },
-  chatLabel: { fontSize: 11, letterSpacing: 1.5, color: '#888', fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
+  contractBox: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 0.5, borderColor: colors.border },
+  contractBrand: { textAlign: 'center', fontSize: 10, letterSpacing: 2, color: colors.textFaint, marginBottom: 12 },
+  contractText: { fontSize: 13, lineHeight: 22, color: colors.text },
+  chatBox: { backgroundColor: colors.surface, borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: colors.border, overflow: 'hidden' },
+  chatLabel: { fontSize: 11, letterSpacing: 1.5, color: colors.textMuted, fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight },
   chatMessages: { padding: 10, maxHeight: 160, overflow: 'hidden' },
   chatMsg: { borderRadius: 10, padding: 10, marginBottom: 6, maxWidth: '85%' },
-  aiMsg: { backgroundColor: '#f5f5f0', alignSelf: 'flex-start' },
-  userMsg: { backgroundColor: '#1a2e1a', alignSelf: 'flex-end' },
-  chatMsgText: { fontSize: 13, color: '#333', lineHeight: 18 },
-  chatInputRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 0.5, borderTopColor: '#f0f0f0', gap: 8 },
-  chatInput: { flex: 1, fontSize: 13, color: '#1a1a1a' },
-  sendBtn: { width: 28, height: 28, backgroundColor: '#1a2e1a', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  sendText: { color: '#fff', fontSize: 16 },
+  aiMsg: { backgroundColor: colors.background, alignSelf: 'flex-start' },
+  userMsg: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, alignSelf: 'flex-end' },
+  chatMsgText: { fontSize: 13, color: colors.text, lineHeight: 18 },
+  chatInputRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 0.5, borderTopColor: colors.borderLight, gap: 8 },
+  chatInput: { flex: 1, fontSize: 13, color: colors.text },
+  sendBtn: { width: 28, height: 28, backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  sendText: { color: colors.textOnPrimary, fontSize: 16 },
   actionRow: { marginBottom: 32 },
-  actionBtn: { backgroundColor: '#1a2e1a', borderRadius: 12, padding: 16, alignItems: 'center' },
-  actionText: { color: '#fff', fontSize: 15, fontWeight: '500' },
+  actionBtn: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, padding: 16, alignItems: 'center' },
+  actionText: { color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' },
 });
