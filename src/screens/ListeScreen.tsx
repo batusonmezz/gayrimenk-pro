@@ -2,18 +2,19 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { sozlesmeleriGetir, SozlesmeKayit } from '../services/storage';
+import { useTheme } from '../theme';
 
 type Filtre = 'Hepsi' | 'Aktif' | 'Bitiyor' | 'Süresi Geçmiş';
 
-function getDurum(bitis: string): { durum: Filtre; renk: string; kalanGun: number } {
-  if (!bitis) return { durum: 'Aktif', renk: '#2e7d32', kalanGun: 999 };
+function getDurum(bitis: string): { durum: Filtre; durumKey: 'aktif' | 'bitiyor' | 'gecmis'; kalanGun: number } {
+  if (!bitis) return { durum: 'Aktif', durumKey: 'aktif', kalanGun: 999 };
   const parts = bitis.split('.');
-  if (parts.length !== 3) return { durum: 'Aktif', renk: '#2e7d32', kalanGun: 999 };
+  if (parts.length !== 3) return { durum: 'Aktif', durumKey: 'aktif', kalanGun: 999 };
   const bitisDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
   const kalanGun = Math.floor((bitisDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (kalanGun < 0) return { durum: 'Süresi Geçmiş', renk: '#c62828', kalanGun };
-  if (kalanGun <= 60) return { durum: 'Bitiyor', renk: '#e65100', kalanGun };
-  return { durum: 'Aktif', renk: '#2e7d32', kalanGun };
+  if (kalanGun < 0) return { durum: 'Süresi Geçmiş', durumKey: 'gecmis', kalanGun };
+  if (kalanGun <= 60) return { durum: 'Bitiyor', durumKey: 'bitiyor', kalanGun };
+  return { durum: 'Aktif', durumKey: 'aktif', kalanGun };
 }
 
 export default function ListeScreen({ navigation }: any) {
@@ -21,6 +22,14 @@ export default function ListeScreen({ navigation }: any) {
   const [filtre, setFiltre] = useState<Filtre>('Hepsi');
   const [arama, setArama] = useState('');
   const [yukleniyor, setYukleniyor] = useState(true);
+
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+  const durumRenk: Record<string, string> = {
+    aktif: colors.success,
+    bitiyor: colors.warning,
+    gecmis: colors.error,
+  };
 
   useFocusEffect(useCallback(() => {
     setYukleniyor(true);
@@ -64,20 +73,20 @@ export default function ListeScreen({ navigation }: any) {
       </View>
 
       <View style={styles.ozet}>
-        <View style={[styles.ozetKart, { backgroundColor: '#e8f5e9' }]}>
-          <Text style={[styles.ozetSayi, { color: '#2e7d32' }]}>{sayilar.aktif}</Text>
+        <View style={[styles.ozetKart, { backgroundColor: colors.successSurface }]}>
+          <Text style={[styles.ozetSayi, { color: colors.success }]}>{sayilar.aktif}</Text>
           <Text style={styles.ozetLabel}>Aktif</Text>
         </View>
-        <View style={[styles.ozetKart, { backgroundColor: '#fff3e0' }]}>
-          <Text style={[styles.ozetSayi, { color: '#e65100' }]}>{sayilar.bitiyor}</Text>
+        <View style={[styles.ozetKart, { backgroundColor: colors.warningSurface }]}>
+          <Text style={[styles.ozetSayi, { color: colors.warning }]}>{sayilar.bitiyor}</Text>
           <Text style={styles.ozetLabel}>Bitiyor</Text>
         </View>
-        <View style={[styles.ozetKart, { backgroundColor: '#ffebee' }]}>
-          <Text style={[styles.ozetSayi, { color: '#c62828' }]}>{sayilar.gecmis}</Text>
+        <View style={[styles.ozetKart, { backgroundColor: colors.errorSurface }]}>
+          <Text style={[styles.ozetSayi, { color: colors.error }]}>{sayilar.gecmis}</Text>
           <Text style={styles.ozetLabel}>Geçmiş</Text>
         </View>
-        <View style={[styles.ozetKart, { backgroundColor: '#f5f5f5' }]}>
-          <Text style={[styles.ozetSayi, { color: '#333' }]}>{kayitlar.length}</Text>
+        <View style={[styles.ozetKart, { backgroundColor: colors.background }]}>
+          <Text style={[styles.ozetSayi, { color: colors.text }]}>{kayitlar.length}</Text>
           <Text style={styles.ozetLabel}>Toplam</Text>
         </View>
       </View>
@@ -88,7 +97,7 @@ export default function ListeScreen({ navigation }: any) {
           placeholder="Kiracı, mal sahibi, daire ara..."
           value={arama}
           onChangeText={setArama}
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.textMuted}
         />
       </View>
 
@@ -120,7 +129,7 @@ export default function ListeScreen({ navigation }: any) {
           <ScrollView scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
             {filtrelenmis.map((k, idx) => {
               const bitis = k.formData?.bitis_tarihi || '';
-              const { durum, renk } = getDurum(bitis);
+              const { durum, durumKey } = getDurum(bitis);
               return (
                 <TouchableOpacity
                   key={k.id}
@@ -140,13 +149,13 @@ export default function ListeScreen({ navigation }: any) {
                   <Text style={[styles.td, { width: 90 }]}>{k.aylik_kira || '-'}</Text>
                   <Text style={[styles.td, { width: 90 }]}>{k.formData?.baslangic_tarihi || '-'}</Text>
                   <Text style={[styles.td, { width: 90 }]}>{bitis || '-'}</Text>
-                  <Text style={[styles.td, { width: 80, color: renk, fontWeight: '600' }]} numberOfLines={1}>{durum}</Text>
+                  <Text style={[styles.td, { width: 80, color: durumRenk[durumKey], fontWeight: '600' }]} numberOfLines={1}>{durum}</Text>
                 </TouchableOpacity>
               );
             })}
             {yukleniyor ? (
               <View style={styles.bosView}>
-                <ActivityIndicator size="large" color="#0f6e56" />
+                <ActivityIndicator size="large" color={colors.primaryAccent} />
               </View>
             ) : filtrelenmis.length === 0 && (
               <View style={styles.bosView}>
@@ -160,29 +169,30 @@ export default function ListeScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#fff', lineHeight: 32 },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: '#fff' },
-  ozet: { flexDirection: 'row', padding: 10, gap: 8 },
-  ozetKart: { flex: 1, borderRadius: 10, padding: 10, alignItems: 'center' },
-  ozetSayi: { fontSize: 18, fontWeight: '600' },
-  ozetLabel: { fontSize: 10, color: '#666', marginTop: 2 },
-  aramaRow: { paddingHorizontal: 10, paddingBottom: 8 },
-  aramaInput: { backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, borderWidth: 0.5, borderColor: '#ddd', color: '#1a1a1a' },
-  filtreSatiri: { maxHeight: 44, paddingLeft: 10 },
-  filtreRow: { flexDirection: 'row', gap: 8, paddingRight: 10, paddingBottom: 8 },
-  filtreBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#fff', borderWidth: 0.5, borderColor: '#ddd' },
-  filtreBtnAktif: { backgroundColor: '#1a2e1a', borderColor: '#1a2e1a' },
-  filtreText: { fontSize: 12, color: '#555' },
-  filtreTextAktif: { color: '#fff', fontWeight: '500' },
-  tableHeader: { flexDirection: 'row', backgroundColor: '#1a2e1a', paddingVertical: 8 },
-  th: { color: '#fff', fontSize: 11, fontWeight: '600', paddingHorizontal: 8 },
-  tableRow: { flexDirection: 'row', paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  tableRowAlt: { backgroundColor: '#fafafa' },
-  td: { fontSize: 12, color: '#333', paddingHorizontal: 8 },
-  bosView: { padding: 40, alignItems: 'center' },
-  bosText: { color: '#aaa', fontSize: 14 },
-});
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+    header: { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    backText: { fontSize: 28, color: colors.textOnPrimary, lineHeight: 32 },
+    headerTitle: { fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    ozet: { flexDirection: 'row', padding: 10, gap: 8 },
+    ozetKart: { flex: 1, borderRadius: 10, padding: 10, alignItems: 'center' },
+    ozetSayi: { fontSize: 18, fontWeight: '600' },
+    ozetLabel: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
+    aramaRow: { paddingHorizontal: 10, paddingBottom: 8 },
+    aramaInput: { backgroundColor: colors.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, borderWidth: 0.5, borderColor: colors.border, color: colors.text },
+    filtreSatiri: { maxHeight: 44, paddingLeft: 10 },
+    filtreRow: { flexDirection: 'row', gap: 8, paddingRight: 10, paddingBottom: 8 },
+    filtreBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 0.5, borderColor: colors.border },
+    filtreBtnAktif: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderColor: colors.primary },
+    filtreText: { fontSize: 12, color: colors.textMuted },
+    filtreTextAktif: { color: colors.textOnPrimary, fontWeight: '500' },
+    tableHeader: { flexDirection: 'row', backgroundColor: colors.primary, paddingVertical: 8 },
+    th: { color: colors.textOnPrimary, fontSize: 11, fontWeight: '600', paddingHorizontal: 8 },
+    tableRow: { flexDirection: 'row', paddingVertical: 10, backgroundColor: colors.surface, borderBottomWidth: 0.5, borderBottomColor: colors.border },
+    tableRowAlt: { backgroundColor: colors.surfaceAlt },
+    td: { fontSize: 12, color: colors.text, paddingHorizontal: 8 },
+    bosView: { padding: 40, alignItems: 'center' },
+    bosText: { color: colors.textMuted, fontSize: 14 },
+  });

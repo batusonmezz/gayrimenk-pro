@@ -32,6 +32,8 @@ export const lightColors = {
   warningSurface: '#fff3e0',   // açık turuncu zemin
   errorSurface:   '#ffebee',   // açık kırmızı zemin
   accentSurface:  '#e1f5ee',   // teal tonlu zemin
+  infoSurface:    '#e8f4fd',   // mavi yumuşak arka plan (Ödeme Takibi vb.)
+  info:           '#1a6fa8',   // mavi — info aksiyonu
 
   // ── Header özel ──────────────────────────────────────────
   badge:          'rgba(255,255,255,0.12)',  // badge arka planı (dark header'da)
@@ -64,6 +66,8 @@ export const darkColors: Record<ColorKey, string> = {
   warningSurface: '#3a2a14',
   errorSurface:   '#3a1f1f',
   accentSurface:  '#13322a',
+  infoSurface:    '#1a2a3a',
+  info:           '#5a9fd4',
   badge:          'rgba(255,255,255,0.10)',
   badgeText:      '#9fe1cb',
   headerMuted:    'rgba(255,255,255,0.50)',

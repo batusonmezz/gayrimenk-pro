@@ -6,6 +6,7 @@ import { sozlesmeleriGetir, sozlesmeSil, SozlesmeKayit } from '../services/stora
 import { getRole } from '../services/authState';
 import { getCurrentUser } from '../services/auth';
 import { supabase } from '../storage/supabaseClient';
+import { useTheme } from '../theme';
 
 export default function KayitlarScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
@@ -16,6 +17,8 @@ export default function KayitlarScreen({ navigation }: any) {
 
   const insets = useSafeAreaInsets();
   const isEmlakci = role === 'emlakci';
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
 
   // Rol: cache'ten hızlı yükle, soğuk başlangıçta async çöz
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function KayitlarScreen({ navigation }: any) {
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
         {yukleniyor ? (
           <View style={styles.empty}>
-            <ActivityIndicator size="large" color="#0f6e56" />
+            <ActivityIndicator size="large" color={colors.primaryAccent} />
           </View>
         ) : kayitlar.length === 0 ? (
           <View style={styles.empty}>
@@ -189,31 +192,32 @@ export default function KayitlarScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#fff', lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
-  count: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
-  content: { flex: 1, padding: 12 },
-  empty: { alignItems: 'center', marginTop: 80, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: '#888' },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0', flexDirection: 'column' },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  cardLeft: { flex: 1, gap: 3 },
-  cardTur: { fontSize: 11, color: '#0f6e56', fontWeight: '500', letterSpacing: 0.5 },
-  cardAd: { fontSize: 14, fontWeight: '500', color: '#1a1a1a' },
-  cardKira: { fontSize: 12, color: '#888' },
-  cardRight: { alignItems: 'flex-end', gap: 8 },
-  cardTarih: { fontSize: 11, color: '#aaa' },
-  duzenleBtn: { backgroundColor: '#e1f5ee', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginTop: 4 },
-  duzenleText: { fontSize: 11, color: '#0f6e56', fontWeight: '500' },
-  silBtn: { backgroundColor: '#fee2e2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  silText: { fontSize: 11, color: '#dc2626', fontWeight: '500' },
-  cardSeparator: { height: 1, backgroundColor: '#f0f0f0', marginTop: 10 },
-  odemeBtn: { paddingVertical: 8, alignItems: 'center', borderRadius: 6, marginTop: 8, backgroundColor: '#e8f4fd' },
-  odemeBtnDisabled: { opacity: 0.5 },
-  odemeBtnText: { fontSize: 12, color: '#1a6fa8', fontWeight: '500' },
-});
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], _isDark: boolean) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+    header: { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    backText: { fontSize: 28, color: colors.textOnPrimary, lineHeight: 32 },
+    headerTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    count: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
+    content: { flex: 1, padding: 12 },
+    empty: { alignItems: 'center', marginTop: 80, gap: 12 },
+    emptyIcon: { fontSize: 48 },
+    emptyText: { fontSize: 15, color: colors.textMuted },
+    card: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border, flexDirection: 'column' },
+    cardRow: { flexDirection: 'row', alignItems: 'center' },
+    cardLeft: { flex: 1, gap: 3 },
+    cardTur: { fontSize: 11, color: colors.primaryAccent, fontWeight: '500', letterSpacing: 0.5 },
+    cardAd: { fontSize: 14, fontWeight: '500', color: colors.text },
+    cardKira: { fontSize: 12, color: colors.textMuted },
+    cardRight: { alignItems: 'flex-end', gap: 8 },
+    cardTarih: { fontSize: 11, color: colors.textMuted },
+    duzenleBtn: { backgroundColor: colors.accentSurface, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginTop: 4 },
+    duzenleText: { fontSize: 11, color: colors.primaryAccent, fontWeight: '500' },
+    silBtn: { backgroundColor: colors.errorSurface, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+    silText: { fontSize: 11, color: colors.error, fontWeight: '500' },
+    cardSeparator: { height: 1, backgroundColor: colors.border, marginTop: 10 },
+    odemeBtn: { paddingVertical: 8, alignItems: 'center', borderRadius: 6, marginTop: 8, backgroundColor: colors.infoSurface },
+    odemeBtnDisabled: { opacity: 0.5 },
+    odemeBtnText: { fontSize: 12, color: colors.info, fontWeight: '500' },
+  });
