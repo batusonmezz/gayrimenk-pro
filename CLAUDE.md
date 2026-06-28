@@ -441,19 +441,41 @@ errorSurface/accentSurface). Cift-set durum renkleri birlestirildi
   Dark fix butonlari: davetBtn/rolBtnSecili/saveBtn/secili/raporBtn. Cihaz test
   OK (PDF hala beyaz/normal).
 
-**KALAN (yeni oturumda buradan devam):**
-- **5-3c — FormScreen** (~88 renk, EN BUYUK dosya, tek basina). Yeni oturum sart.
-- **5-3d:** OdemeTakipScreen (~56) + PreviewScreen (~25). OdemeTakip'te info/durum
-  renkleri yogun olabilir.
-- **5-3e:** ResearchScreen (~18) + kucuk bilesenler (PersonPicker, KimlikFoto,
-  ChatBox, ContractCard).
+- **5-3c — TAMAMLANDI:** FormScreen (en buyuk, ~88 renk). makeStyles + secim
+  butonu helper'lari: secimBtnStyle(secili) + secimBtnText(secili) — 6 secim
+  grubu (depozito_tur, simdiki_durum, kirayan_vekalet, kiraci_vekalet,
+  kefil_var, kefil_sayisi) bu helper'lara baglandi (padding inline korundu).
+  Beyaz header -> surface. Pasif buton -> surfaceSubtle. Cihaz test OK
+  (6 grup secim calisiyor, sozlesme olusuyor).
+- **PersonPicker — TAMAMLANDI:** useTheme + makeStyles. Baslik sabit
+  "Kayitli Kisi Sec" yapildi (eskiden hard-coded "Kayitli Kiraci Sec" idi,
+  mal sahibi/kiraci ayrimi kaldirildi). header dark fix. Cihaz test OK.
+- **PreviewScreen — TAMAMLANDI (5-3d):** sozlesme onizleme + AI chat ekrani.
+  makeStyles + token. userMsg/sendBtn/actionBtn dark fix. PDF template AYRI
+  DOSYA (pdfTemplate.ts), dokunulmadi. Cihaz test OK.
+- **KimlikFoto — TAMAMLANDI:** kimlik fotografi yukleme bileseni useTheme'e
+  gecti. Cihaz test OK. (FormScreen akisinin son beyaz parcasiydi.)
+
+**KALAN (yarin buradan devam):**
+- **5-3e — OdemeTakipScreen** (523 satir, ~53 renk, EN KARMASIK kalan).
+  YENI OTURUM SART. Iki parcaya bolunecek:
+  * 5-3e-1: 2 PURE HELPER key refactor (hesaplaDepozitoDurum + hesaplaEtiket ->
+    renk string yerine durumKey 'success'|'warning'|'error'|'muted' donduruyor;
+    component ici DURUM_RENK map token'a ceviriyor; cagri yerleri satir 325/335
+    + 407/417) + StyleSheet token donusumu (2 dark fix: header + modalHeader).
+  * 5-3e-2: inline badge'ler (Odendi/Bekliyor/Gecikti — successSurface/success,
+    warningSurface/warning, errorSurface/error), inline tutar/ternary
+    (#27ae60->success, #e74c3c->error), inline ActivityIndicator'lar
+    (#0f6e56->primaryAccent, #1a6fa8->info).
+  * DOKUNULMAZ: dekontHtml() WebView template (satir 59-85), dekontWeb.bg
+    '#1a1a1a' (satir 521, WebView koordineli), rgba beyazlar (479,519).
+  * Ikisi TEK commit, arada cihaz testi yok.
+- **ResearchScreen** (~18) + kucuk bilesenler (ChatBox ~4, ContractCard ~2).
 - **StatusBar reaktif:** 8 dosyada sabit barStyle, isDark'a gore dinamik.
 - **TOGGLE (en son):** ProfilScreen "Gece Modu" satiri ("Yakinda") -> gercek
   toggle, setMode ile light/dark/system. Tum ekranlar token'a gectikten SONRA.
 - **DARK ROTUS:** Tum uygulama koyu iken taze gozle palet gozden gecmesi.
-  App.tsx loading dali '#f5f5f0' da o zaman. (Kullanici daha once dashboard
-  "ice sinmedi" demisti — muhtemelen yari-koyu ara durumdandi, hepsi bitince
-  yeniden bakilacak.)
+  App.tsx loading dali '#f5f5f0' da o zaman.
 
 **Onemli — useColorScheme canli degisimi yakalamiyor:** Dev'de telefon
 sistem temasi degisince RELOAD gerekiyor (Android). Gercek kullanimda sorun
