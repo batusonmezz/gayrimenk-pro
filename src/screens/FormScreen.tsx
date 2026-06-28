@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import KimlikFoto from '../components/KimlikFoto';
 import PersonPicker from '../components/PersonPicker';
 import { supabase } from '../storage/supabaseClient';
+import { useTheme } from '../theme';
 
 const KIRA_FIELDS = [
   { section: 'TAŞINMAZ BİLGİLERİ', fields: [
@@ -59,6 +60,17 @@ export default function FormScreen({ navigation, route }: any) {
     malSahibiPersonId: mevcutMalSahibiPersonId,
   } = route.params;
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+
+  const secimBtnStyle = (secili: boolean) => ({
+    backgroundColor: secili ? (isDark ? colors.primaryAccent : colors.primary) : colors.surfaceSubtle,
+    borderColor: secili ? colors.primary : colors.border,
+  });
+  const secimBtnText = (secili: boolean) => ({
+    color: secili ? colors.textOnPrimary : colors.textSecondary,
+  });
+
   const [formData, setFormData] = useState<Record<string, string>>(mevcutFormData || {});
   const [loading, setLoading] = useState(false);
   const [fotograflar, setFotograflar] = useState<Record<string, string>>(mevcutFotograflar ?? {});
@@ -200,18 +212,18 @@ export default function FormScreen({ navigation, route }: any) {
 
         {/* Site picker modal */}
         <Modal visible={sitePickerVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSitePickerVisible(false)}>
-          <View style={{ flex: 1, backgroundColor: '#f5f5f0' }}>
-            <View style={{ backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' }}>Kayıtlı Site Seç</Text>
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <View style={{ backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary }}>Kayıtlı Site Seç</Text>
               <TouchableOpacity onPress={() => setSitePickerVisible(false)} style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)' }}>✕</Text>
               </TouchableOpacity>
             </View>
             {buildingsLoading ? (
-              <ActivityIndicator style={{ marginTop: 40 }} color="#1a2e1a" />
+              <ActivityIndicator style={{ marginTop: 40 }} color={isDark ? colors.primaryAccent : colors.primary} />
             ) : buildings.length === 0 ? (
               <View style={{ alignItems: 'center', marginTop: 60 }}>
-                <Text style={{ fontSize: 14, color: '#888' }}>Kayıtlı site yok — önce Siteler ekranından ekleyin</Text>
+                <Text style={{ fontSize: 14, color: colors.textMuted }}>Kayıtlı site yok — önce Siteler ekranından ekleyin</Text>
               </View>
             ) : (
               <FlatList
@@ -219,7 +231,7 @@ export default function FormScreen({ navigation, route }: any) {
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14 }}
+                    style={{ backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 14 }}
                     onPress={() => {
                       setSelectedBuildingId(item.id);
                       setFormData(prev => ({
@@ -233,15 +245,15 @@ export default function FormScreen({ navigation, route }: any) {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 15, fontWeight: '500', color: '#1a1a1a' }}>{item.ad}</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '500', color: colors.text }}>{item.ad}</Text>
                     {(item.il_ilce || item.mahalle) ? (
-                      <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                      <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
                         {[item.il_ilce, item.mahalle].filter(Boolean).join(' · ')}
                       </Text>
                     ) : null}
                   </TouchableOpacity>
                 )}
-                ItemSeparatorComponent={() => <View style={{ height: 0.5, backgroundColor: '#e0e0e0', marginHorizontal: 16 }} />}
+                ItemSeparatorComponent={() => <View style={{ height: 0.5, backgroundColor: colors.border, marginHorizontal: 16 }} />}
               />
             )}
           </View>
@@ -251,26 +263,26 @@ export default function FormScreen({ navigation, route }: any) {
             <Text style={styles.sectionTitle}>{section.section}</Text>
             {section.section === 'TAŞINMAZ BİLGİLERİ' && (
               <TouchableOpacity
-                style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+                style={{ margin: 10, backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 8, padding: 10, alignItems: 'center' }}
                 onPress={handleSitePickerAc}
               >
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>Kayıtlı siteden seç</Text>
+                <Text style={{ color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' }}>Kayıtlı siteden seç</Text>
               </TouchableOpacity>
             )}
             {section.section === 'KİRAYA VEREN' && (
               <TouchableOpacity
-                style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+                style={{ margin: 10, backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 8, padding: 10, alignItems: 'center' }}
                 onPress={() => setMalSahibiPickerVisible(true)}
               >
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>Kayıtlı mal sahibinden seç</Text>
+                <Text style={{ color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' }}>Kayıtlı mal sahibinden seç</Text>
               </TouchableOpacity>
             )}
             {section.section === 'KİRACI' && (
               <TouchableOpacity
-                style={{ margin: 10, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+                style={{ margin: 10, backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 8, padding: 10, alignItems: 'center' }}
                 onPress={() => setPersonPickerVisible(true)}
               >
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>Kayıtlı kiracıdan seç</Text>
+                <Text style={{ color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' }}>Kayıtlı kiracıdan seç</Text>
               </TouchableOpacity>
             )}
             {section.fields.map((field, idx) => (
@@ -280,7 +292,7 @@ export default function FormScreen({ navigation, route }: any) {
                   <TextInput
                     style={styles.fieldInput}
                     placeholder={field.placeholder}
-                    placeholderTextColor="#999"
+                    placeholderTextColor={colors.placeholder}
                     value={formData[field.key] || ''}
                     onChangeText={(val) => handleChangeText(field.key, val)}
                     keyboardType={(field as any).keyboardType || 'default'}
@@ -295,14 +307,11 @@ export default function FormScreen({ navigation, route }: any) {
                         {['TL', 'Dolar', 'Euro', 'Altın'].map(opt => (
                           <TouchableOpacity
                             key={opt}
-                            style={{
-                              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
-                              backgroundColor: formData.depozito_tur === opt ? '#1a2e1a' : '#f0f0f0',
-                              borderWidth: 0.5, borderColor: formData.depozito_tur === opt ? '#1a2e1a' : '#ddd',
-                            }}
+                            style={[styles.secimBtn, { paddingHorizontal: 12, paddingVertical: 6 },
+                              secimBtnStyle(formData.depozito_tur === opt)]}
                             onPress={() => setFormData(prev => ({ ...prev, depozito_tur: opt }))}
                           >
-                            <Text style={{ color: formData.depozito_tur === opt ? '#fff' : '#555', fontSize: 13 }}>{opt}</Text>
+                            <Text style={{ ...secimBtnText(formData.depozito_tur === opt), fontSize: 13 }}>{opt}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -320,7 +329,7 @@ export default function FormScreen({ navigation, route }: any) {
                             formData.depozito_tur === 'Altın' ? '2 adet tam altın' :
                             formData.depozito_tur === 'Dolar' ? '200 USD' : '200 EUR'
                           }
-                          placeholderTextColor="#bbb"
+                          placeholderTextColor={colors.placeholder}
                           value={formData.depozito_miktar || ''}
                           onChangeText={val => setFormData(prev => ({ ...prev, depozito_miktar: val }))}
                         />
@@ -341,14 +350,11 @@ export default function FormScreen({ navigation, route }: any) {
               {['Boş', 'Eşyalı', 'Eşyasız'].map(opt => (
                 <TouchableOpacity
                   key={opt}
-                  style={{
-                    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
-                    backgroundColor: formData.simdiki_durum === opt ? '#1a2e1a' : '#f0f0f0',
-                    borderWidth: 0.5, borderColor: formData.simdiki_durum === opt ? '#1a2e1a' : '#ddd',
-                  }}
+                  style={[styles.secimBtn, { paddingHorizontal: 14, paddingVertical: 8 },
+                    secimBtnStyle(formData.simdiki_durum === opt)]}
                   onPress={() => setFormData(prev => ({ ...prev, simdiki_durum: opt }))}
                 >
-                  <Text style={{ color: formData.simdiki_durum === opt ? '#fff' : '#555', fontSize: 13 }}>{opt}</Text>
+                  <Text style={{ ...secimBtnText(formData.simdiki_durum === opt), fontSize: 13 }}>{opt}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -358,43 +364,43 @@ export default function FormScreen({ navigation, route }: any) {
         {formData.simdiki_durum === 'Eşyalı' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>EŞYA LİSTESİ</Text>
-            <View style={{ padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' }}>
+            <View style={{ padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight }}>
               <Text style={styles.fieldLabel}>Eşya Adı</Text>
-              <TextInput style={styles.fieldInput} placeholder="Buzdolabı" placeholderTextColor="#bbb"
+              <TextInput style={styles.fieldInput} placeholder="Buzdolabı" placeholderTextColor={colors.placeholder}
                 value={yeniEsya.ad}
                 onChangeText={v => setYeniEsya(prev => ({ ...prev, ad: v }))} />
             </View>
-            <View style={{ padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' }}>
+            <View style={{ padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight }}>
               <Text style={styles.fieldLabel}>Marka / Model</Text>
-              <TextInput style={styles.fieldInput} placeholder="Arçelik / No-Frost" placeholderTextColor="#bbb"
+              <TextInput style={styles.fieldInput} placeholder="Arçelik / No-Frost" placeholderTextColor={colors.placeholder}
                 value={yeniEsya.marka}
                 onChangeText={v => setYeniEsya(prev => ({ ...prev, marka: v }))} />
             </View>
-            <View style={{ padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' }}>
+            <View style={{ padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight }}>
               <Text style={styles.fieldLabel}>Adet</Text>
-              <TextInput style={styles.fieldInput} placeholder="1" placeholderTextColor="#bbb"
+              <TextInput style={styles.fieldInput} placeholder="1" placeholderTextColor={colors.placeholder}
                 keyboardType="numeric"
                 value={yeniEsya.adet}
                 onChangeText={v => setYeniEsya(prev => ({ ...prev, adet: v }))} />
             </View>
             <TouchableOpacity
-              style={{ margin: 12, backgroundColor: '#1a2e1a', borderRadius: 8, padding: 10, alignItems: 'center' }}
+              style={{ margin: 12, backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 8, padding: 10, alignItems: 'center' }}
               onPress={() => {
                 if (!yeniEsya.ad) return;
                 setEsyaListesi(prev => [...prev, yeniEsya]);
                 setYeniEsya({ ad: '', marka: '', adet: '1' });
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>+ Eşya Ekle</Text>
+              <Text style={{ color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' }}>+ Eşya Ekle</Text>
             </TouchableOpacity>
             {esyaListesi.length > 0 && (
               <View style={{ paddingHorizontal: 12, paddingBottom: 12 }}>
                 <Text style={[styles.fieldLabel, { marginBottom: 8 }]}>Eklenen Eşyalar ({esyaListesi.length})</Text>
                 {esyaListesi.map((esya, i) => (
-                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: '#f5f5f5' }}>
-                    <Text style={{ flex: 1, fontSize: 12, color: '#333' }}>{i + 1}. {esya.ad}{esya.marka ? ` (${esya.marka})` : ''} — {esya.adet} adet</Text>
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight }}>
+                    <Text style={{ flex: 1, fontSize: 12, color: colors.text }}>{i + 1}. {esya.ad}{esya.marka ? ` (${esya.marka})` : ''} — {esya.adet} adet</Text>
                     <TouchableOpacity onPress={() => setEsyaListesi(prev => prev.filter((_, idx) => idx !== i))}>
-                      <Text style={{ color: '#dc2626', fontSize: 12, fontWeight: '500' }}>Sil</Text>
+                      <Text style={{ color: colors.error, fontSize: 12, fontWeight: '500' }}>Sil</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -412,14 +418,11 @@ export default function FormScreen({ navigation, route }: any) {
               {['Hayır', 'Evet'].map(opt => (
                 <TouchableOpacity
                   key={opt}
-                  style={{
-                    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
-                    backgroundColor: formData.kirayan_vekalet === opt ? '#1a2e1a' : '#f0f0f0',
-                    borderWidth: 0.5, borderColor: formData.kirayan_vekalet === opt ? '#1a2e1a' : '#ddd',
-                  }}
+                  style={[styles.secimBtn, { paddingHorizontal: 16, paddingVertical: 8 },
+                    secimBtnStyle(formData.kirayan_vekalet === opt)]}
                   onPress={() => setFormData(prev => ({ ...prev, kirayan_vekalet: opt }))}
                 >
-                  <Text style={{ color: formData.kirayan_vekalet === opt ? '#fff' : '#555', fontSize: 13 }}>{opt}</Text>
+                  <Text style={{ ...secimBtnText(formData.kirayan_vekalet === opt), fontSize: 13 }}>{opt}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -429,13 +432,13 @@ export default function FormScreen({ navigation, route }: any) {
             <>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Vekilin Adı Soyadı</Text>
-                <TextInput style={styles.fieldInput} placeholder="Ali Veli" placeholderTextColor="#bbb"
+                <TextInput style={styles.fieldInput} placeholder="Ali Veli" placeholderTextColor={colors.placeholder}
                   value={formData.kirayan_vekil_ad || ''}
                   onChangeText={val => setFormData(prev => ({ ...prev, kirayan_vekil_ad: val }))} />
               </View>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Vekilin TC No</Text>
-                <TextInput style={styles.fieldInput} placeholder="12345678901" placeholderTextColor="#bbb"
+                <TextInput style={styles.fieldInput} placeholder="12345678901" placeholderTextColor={colors.placeholder}
                   value={formData.kirayan_vekil_tc || ''}
                   onChangeText={val => setFormData(prev => ({ ...prev, kirayan_vekil_tc: val }))} />
               </View>
@@ -448,14 +451,11 @@ export default function FormScreen({ navigation, route }: any) {
               {['Hayır', 'Evet'].map(opt => (
                 <TouchableOpacity
                   key={opt}
-                  style={{
-                    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
-                    backgroundColor: formData.kiraci_vekalet === opt ? '#1a2e1a' : '#f0f0f0',
-                    borderWidth: 0.5, borderColor: formData.kiraci_vekalet === opt ? '#1a2e1a' : '#ddd',
-                  }}
+                  style={[styles.secimBtn, { paddingHorizontal: 16, paddingVertical: 8 },
+                    secimBtnStyle(formData.kiraci_vekalet === opt)]}
                   onPress={() => setFormData(prev => ({ ...prev, kiraci_vekalet: opt }))}
                 >
-                  <Text style={{ color: formData.kiraci_vekalet === opt ? '#fff' : '#555', fontSize: 13 }}>{opt}</Text>
+                  <Text style={{ ...secimBtnText(formData.kiraci_vekalet === opt), fontSize: 13 }}>{opt}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -465,13 +465,13 @@ export default function FormScreen({ navigation, route }: any) {
             <>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Vekilin Adı Soyadı</Text>
-                <TextInput style={styles.fieldInput} placeholder="Ayşe Yılmaz" placeholderTextColor="#bbb"
+                <TextInput style={styles.fieldInput} placeholder="Ayşe Yılmaz" placeholderTextColor={colors.placeholder}
                   value={formData.kiraci_vekil_ad || ''}
                   onChangeText={val => setFormData(prev => ({ ...prev, kiraci_vekil_ad: val }))} />
               </View>
               <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                 <Text style={styles.fieldLabel}>Vekilin TC No</Text>
-                <TextInput style={styles.fieldInput} placeholder="98765432109" placeholderTextColor="#bbb"
+                <TextInput style={styles.fieldInput} placeholder="98765432109" placeholderTextColor={colors.placeholder}
                   value={formData.kiraci_vekil_tc || ''}
                   onChangeText={val => setFormData(prev => ({ ...prev, kiraci_vekil_tc: val }))} />
               </View>
@@ -487,14 +487,11 @@ export default function FormScreen({ navigation, route }: any) {
               {['Hayır', 'Evet'].map(opt => (
                 <TouchableOpacity
                   key={opt}
-                  style={{
-                    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
-                    backgroundColor: formData.kefil_var === opt ? '#1a2e1a' : '#f0f0f0',
-                    borderWidth: 0.5, borderColor: formData.kefil_var === opt ? '#1a2e1a' : '#ddd',
-                  }}
+                  style={[styles.secimBtn, { paddingHorizontal: 16, paddingVertical: 8 },
+                    secimBtnStyle(formData.kefil_var === opt)]}
                   onPress={() => setFormData(prev => ({ ...prev, kefil_var: opt }))}
                 >
-                  <Text style={{ color: formData.kefil_var === opt ? '#fff' : '#555', fontSize: 13 }}>{opt}</Text>
+                  <Text style={{ ...secimBtnText(formData.kefil_var === opt), fontSize: 13 }}>{opt}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -508,14 +505,11 @@ export default function FormScreen({ navigation, route }: any) {
                   {['1', '2'].map(opt => (
                     <TouchableOpacity
                       key={opt}
-                      style={{
-                        paddingHorizontal: 20, paddingVertical: 8, borderRadius: 8,
-                        backgroundColor: formData.kefil_sayisi === opt ? '#1a2e1a' : '#f0f0f0',
-                        borderWidth: 0.5, borderColor: formData.kefil_sayisi === opt ? '#1a2e1a' : '#ddd',
-                      }}
+                      style={[styles.secimBtn, { paddingHorizontal: 20, paddingVertical: 8 },
+                        secimBtnStyle(formData.kefil_sayisi === opt)]}
                       onPress={() => setFormData(prev => ({ ...prev, kefil_sayisi: opt }))}
                     >
-                      <Text style={{ color: formData.kefil_sayisi === opt ? '#fff' : '#555', fontSize: 13 }}>{opt}</Text>
+                      <Text style={{ ...secimBtnText(formData.kefil_sayisi === opt), fontSize: 13 }}>{opt}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -523,13 +517,13 @@ export default function FormScreen({ navigation, route }: any) {
 
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>1. Kefil Ad Soyad</Text>
-                <TextInput style={styles.fieldInput} placeholder="Ali Veli" placeholderTextColor="#bbb"
+                <TextInput style={styles.fieldInput} placeholder="Ali Veli" placeholderTextColor={colors.placeholder}
                   value={formData.kefil1_ad || ''}
                   onChangeText={val => setFormData(prev => ({ ...prev, kefil1_ad: val }))} />
               </View>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>1. Kefil TC No</Text>
-                <TextInput style={styles.fieldInput} placeholder="12345678901" placeholderTextColor="#bbb"
+                <TextInput style={styles.fieldInput} placeholder="12345678901" placeholderTextColor={colors.placeholder}
                   value={formData.kefil1_tc || ''}
                   onChangeText={val => setFormData(prev => ({ ...prev, kefil1_tc: val }))} />
               </View>
@@ -538,13 +532,13 @@ export default function FormScreen({ navigation, route }: any) {
                 <>
                   <View style={styles.fieldRow}>
                     <Text style={styles.fieldLabel}>2. Kefil Ad Soyad</Text>
-                    <TextInput style={styles.fieldInput} placeholder="Ayşe Yılmaz" placeholderTextColor="#bbb"
+                    <TextInput style={styles.fieldInput} placeholder="Ayşe Yılmaz" placeholderTextColor={colors.placeholder}
                       value={formData.kefil2_ad || ''}
                       onChangeText={val => setFormData(prev => ({ ...prev, kefil2_ad: val }))} />
                   </View>
                   <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                     <Text style={styles.fieldLabel}>2. Kefil TC No</Text>
-                    <TextInput style={styles.fieldInput} placeholder="98765432109" placeholderTextColor="#bbb"
+                    <TextInput style={styles.fieldInput} placeholder="98765432109" placeholderTextColor={colors.placeholder}
                       value={formData.kefil2_tc || ''}
                       onChangeText={val => setFormData(prev => ({ ...prev, kefil2_tc: val }))} />
                   </View>
@@ -587,26 +581,27 @@ export default function FormScreen({ navigation, route }: any) {
         </View>
 
         <TouchableOpacity style={[styles.generateBtn, { marginBottom: insets.bottom + 8 }]} onPress={handleGenerate} disabled={loading} activeOpacity={0.8}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.generateText}>✦ Sözleşme Oluştur</Text>}
+          {loading ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={styles.generateText}>✦ Sözleşme Oluştur</Text>}
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#fff', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 0.5, borderBottomColor: '#e0e0e0' },
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+  header: { backgroundColor: colors.surface, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#555', lineHeight: 32 },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: '#1a1a1a' },
-  headerSub: { fontSize: 12, color: '#888' },
+  backText: { fontSize: 28, color: colors.textSecondary, lineHeight: 32 },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
+  headerSub: { fontSize: 12, color: colors.textMuted },
   content: { flex: 1, padding: 12 },
-  section: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: '#e0e0e0', overflow: 'hidden' },
-  sectionTitle: { fontSize: 11, letterSpacing: 1.5, color: '#888', fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  fieldRow: { padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  fieldLabel: { fontSize: 11, color: '#888', fontWeight: '500', marginBottom: 4 },
-  fieldInput: { fontSize: 14, color: '#1a1a1a', backgroundColor: 'transparent' },
-  generateBtn: { backgroundColor: '#1a2e1a', borderRadius: 12, padding: 16, alignItems: 'center', margin: 4, marginBottom: 32 },
-  generateText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  section: { backgroundColor: colors.surface, borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: colors.border, overflow: 'hidden' },
+  sectionTitle: { fontSize: 11, letterSpacing: 1.5, color: colors.textMuted, fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight },
+  fieldRow: { padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight },
+  fieldLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '500', marginBottom: 4 },
+  fieldInput: { fontSize: 14, color: colors.text, backgroundColor: 'transparent' },
+  generateBtn: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', margin: 4, marginBottom: 32 },
+  generateText: { color: colors.textOnPrimary, fontSize: 16, fontWeight: '500' },
+  secimBtn: { borderRadius: 8, borderWidth: 0.5 },
 });
