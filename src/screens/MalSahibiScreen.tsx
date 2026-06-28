@@ -2,10 +2,13 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { sozlesmeleriGetir, SozlesmeKayit } from '../services/storage';
+import { useTheme } from '../theme';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
 export default function MalSahibiScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const [malSahipleri, setMalSahipleri] = useState<{ ad: string; kayitlar: SozlesmeKayit[] }[]>([]);
   const [secili, setSecili] = useState<string | null>(null);
 
@@ -106,7 +109,7 @@ export default function MalSahibiScreen({ navigation }: any) {
                 style={[styles.malSahibiKart, secili === m.ad && styles.secili]}
                 onPress={() => setSecili(m.ad)}
               >
-                <Text style={[styles.malSahibiAd, secili === m.ad && { color: '#fff' }]}>{m.ad}</Text>
+                <Text style={[styles.malSahibiAd, secili === m.ad && { color: colors.textOnPrimary }]}>{m.ad}</Text>
                 <Text style={[styles.malSahibiAdet, secili === m.ad && { color: 'rgba(255,255,255,0.7)' }]}>{m.kayitlar.length} mülk</Text>
               </TouchableOpacity>
             ))}
@@ -177,34 +180,35 @@ export default function MalSahibiScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#fff', lineHeight: 32 },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: '#fff' },
-  content: { flex: 1, flexDirection: 'row' },
-  liste: { width: 130, backgroundColor: '#fff', borderRightWidth: 0.5, borderRightColor: '#e0e0e0' },
-  listeBaslik: { fontSize: 9, letterSpacing: 1, color: '#888', padding: 10, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0', fontWeight: '500' },
-  malSahibiKart: { padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  secili: { backgroundColor: '#1a2e1a' },
-  malSahibiAd: { fontSize: 12, fontWeight: '500', color: '#1a1a1a', marginBottom: 2 },
-  malSahibiAdet: { fontSize: 10, color: '#888' },
-  detay: { flex: 1, padding: 10 },
-  detayBaslik: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  detayAd: { fontSize: 13, fontWeight: '500', color: '#1a1a1a', flex: 1 },
-  raporBtn: { backgroundColor: '#1a2e1a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  raporBtnText: { color: '#fff', fontSize: 11, fontWeight: '500' },
-  ozet: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  ozetKart: { flex: 1, backgroundColor: '#e1f5ee', borderRadius: 8, padding: 10, alignItems: 'center' },
-  ozetSayi: { fontSize: 16, fontWeight: '500', color: '#0f6e56' },
-  ozetLabel: { fontSize: 10, color: '#0f6e56' },
-  daire: { backgroundColor: '#fff', borderRadius: 10, padding: 10, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  daireBaslik: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  daireNo: { fontSize: 13, fontWeight: '500', color: '#1a1a1a' },
-  daireKiraci: { fontSize: 12, color: '#555', marginBottom: 2 },
-  daireKira: { fontSize: 13, fontWeight: '500', color: '#0f6e56', marginBottom: 2 },
-  daireTarih: { fontSize: 10, color: '#aaa' },
-  bosDetay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bosDetayText: { fontSize: 13, color: '#aaa' },
-});
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+    header: { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    backText: { fontSize: 28, color: colors.textOnPrimary, lineHeight: 32 },
+    headerTitle: { fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    content: { flex: 1, flexDirection: 'row' },
+    liste: { width: 130, backgroundColor: colors.surface, borderRightWidth: 0.5, borderRightColor: colors.border },
+    listeBaslik: { fontSize: 9, letterSpacing: 1, color: colors.textMuted, padding: 10, borderBottomWidth: 0.5, borderBottomColor: colors.border, fontWeight: '500' },
+    malSahibiKart: { padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.border },
+    secili: { backgroundColor: isDark ? colors.primaryAccent : colors.primary },
+    malSahibiAd: { fontSize: 12, fontWeight: '500', color: colors.text, marginBottom: 2 },
+    malSahibiAdet: { fontSize: 10, color: colors.textMuted },
+    detay: { flex: 1, padding: 10 },
+    detayBaslik: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+    detayAd: { fontSize: 13, fontWeight: '500', color: colors.text, flex: 1 },
+    raporBtn: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+    raporBtnText: { color: colors.textOnPrimary, fontSize: 11, fontWeight: '500' },
+    ozet: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+    ozetKart: { flex: 1, backgroundColor: colors.accentSurface, borderRadius: 8, padding: 10, alignItems: 'center' },
+    ozetSayi: { fontSize: 16, fontWeight: '500', color: colors.primaryAccent },
+    ozetLabel: { fontSize: 10, color: colors.primaryAccent },
+    daire: { backgroundColor: colors.surface, borderRadius: 10, padding: 10, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border },
+    daireBaslik: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    daireNo: { fontSize: 13, fontWeight: '500', color: colors.text },
+    daireKiraci: { fontSize: 12, color: colors.textSecondary, marginBottom: 2 },
+    daireKira: { fontSize: 13, fontWeight: '500', color: colors.primaryAccent, marginBottom: 2 },
+    daireTarih: { fontSize: 10, color: colors.textMuted },
+    bosDetay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    bosDetayText: { fontSize: 13, color: colors.textMuted },
+  });

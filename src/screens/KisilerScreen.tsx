@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { supabase } from '../storage/supabaseClient';
 import { getRole } from '../services/authState';
+import { useTheme } from '../theme';
 
 type PersonRow = {
   id: string;
@@ -28,6 +29,8 @@ function normalizePhone(tel: string | null | undefined): string {
 
 export default function KisilerScreen({ navigation }: any) {
   const role = getRole();
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
 
   const [persons,      setPersons]      = useState<PersonRow[]>([]);
   const [yukleniyor,   setYukleniyor]   = useState(true);
@@ -148,7 +151,7 @@ export default function KisilerScreen({ navigation }: any) {
       <ScrollView style={styles.content} scrollEnabled nestedScrollEnabled showsVerticalScrollIndicator>
         {yukleniyor ? (
           <View style={styles.empty}>
-            <ActivityIndicator size="large" color="#0f6e56" />
+            <ActivityIndicator size="large" color={colors.primaryAccent} />
           </View>
         ) : persons.length === 0 ? (
           <View style={styles.empty}>
@@ -213,7 +216,7 @@ export default function KisilerScreen({ navigation }: any) {
                   <TextInput
                     style={styles.fieldInput}
                     placeholder="ornek@mail.com"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor={colors.placeholder}
                     value={inviteEmail}
                     onChangeText={setInviteEmail}
                     keyboardType="email-address"
@@ -251,7 +254,7 @@ export default function KisilerScreen({ navigation }: any) {
                   disabled={!inviteEmail.trim() || !inviteRole || gonderiyor}
                 >
                   {gonderiyor
-                    ? <ActivityIndicator color="#fff" />
+                    ? <ActivityIndicator color={colors.textOnPrimary} />
                     : <Text style={styles.saveBtnText}>Davet Oluştur</Text>
                   }
                 </TouchableOpacity>
@@ -296,54 +299,55 @@ export default function KisilerScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container:       { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header:          { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  backBtn:         { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText:        { fontSize: 28, color: '#fff', lineHeight: 32 },
-  headerTitle:     { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
-  content:         { flex: 1, padding: 12 },
-  empty:           { alignItems: 'center', marginTop: 80, gap: 10 },
-  emptyIcon:       { fontSize: 48 },
-  emptyText:       { fontSize: 15, color: '#888' },
-  emptySub:        { fontSize: 12, color: '#bbb', textAlign: 'center', paddingHorizontal: 32 },
-  card:            { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0', flexDirection: 'row', alignItems: 'center' },
-  cardLeft:        { flex: 1, gap: 3 },
-  cardAd:          { fontSize: 15, fontWeight: '500', color: '#1a1a1a' },
-  cardTel:         { fontSize: 12, color: '#888' },
-  cardRight:       { marginLeft: 10 },
-  bagliRozet:      { backgroundColor: '#e1f5ee', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  bagliText:       { fontSize: 11, color: '#0f6e56', fontWeight: '600' },
-  davetBtn:        { backgroundColor: '#1a2e1a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  davetBtnText:    { fontSize: 12, color: '#fff', fontWeight: '500' },
-  modal:           { flex: 1, backgroundColor: '#f5f5f0' },
-  modalHeader:     { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
-  modalTitle:      { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
-  closeBtn:        { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  closeText:       { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
-  modalContent:    { flex: 1, padding: 12 },
-  kisiAd:          { fontSize: 13, color: '#888', marginBottom: 12, marginTop: 4 },
-  fieldRow:        { backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  fieldLabel:      { fontSize: 11, color: '#888', fontWeight: '500', marginBottom: 4 },
-  fieldLabel2:     { fontSize: 11, color: '#888', fontWeight: '500', marginBottom: 8, marginLeft: 4 },
-  fieldInput:      { fontSize: 14, color: '#1a1a1a' },
-  rolRow:          { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  rolBtn:          { flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#f5f5f0', borderWidth: 0.5, borderColor: '#e0e0e0', alignItems: 'center' },
-  rolBtnSecili:    { backgroundColor: '#1a2e1a', borderColor: '#1a2e1a' },
-  rolBtnText:      { fontSize: 14, color: '#555', fontWeight: '500' },
-  rolBtnTextSecili:{ color: '#fff' },
-  saveBtn:         { backgroundColor: '#1a2e1a', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
-  saveBtnDisabled: { opacity: 0.4 },
-  saveBtnText:     { color: '#fff', fontSize: 15, fontWeight: '500' },
-  sonucKart:       { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  sonucBaslik:     { fontSize: 15, fontWeight: '600', color: '#0f6e56', marginBottom: 12 },
-  sonucSatir:      { marginBottom: 8 },
-  sonucEtiket:     { fontSize: 11, color: '#888', fontWeight: '500', marginBottom: 2 },
-  sonucDeger:      { fontSize: 14, color: '#1a1a1a' },
-  sonucSifre:      { fontSize: 16, color: '#1a1a1a', fontFamily: 'monospace' as any, letterSpacing: 1 },
-  whatsappBtn:     { backgroundColor: '#25D366', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 8 },
-  whatsappBtnDisabled: { opacity: 0.4 },
-  whatsappBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
-  kapatBtn:        { backgroundColor: '#f5f5f0', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  kapatBtnText:    { color: '#555', fontSize: 15, fontWeight: '500' },
-});
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) =>
+  StyleSheet.create({
+    container:       { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+    header:          { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    backBtn:         { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    backText:        { fontSize: 28, color: colors.textOnPrimary, lineHeight: 32 },
+    headerTitle:     { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    content:         { flex: 1, padding: 12 },
+    empty:           { alignItems: 'center', marginTop: 80, gap: 10 },
+    emptyIcon:       { fontSize: 48 },
+    emptyText:       { fontSize: 15, color: colors.textMuted },
+    emptySub:        { fontSize: 12, color: colors.placeholder, textAlign: 'center', paddingHorizontal: 32 },
+    card:            { backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' },
+    cardLeft:        { flex: 1, gap: 3 },
+    cardAd:          { fontSize: 15, fontWeight: '500', color: colors.text },
+    cardTel:         { fontSize: 12, color: colors.textMuted },
+    cardRight:       { marginLeft: 10 },
+    bagliRozet:      { backgroundColor: colors.accentSurface, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+    bagliText:       { fontSize: 11, color: colors.primaryAccent, fontWeight: '600' },
+    davetBtn:        { backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+    davetBtnText:    { fontSize: 12, color: colors.textOnPrimary, fontWeight: '500' },
+    modal:           { flex: 1, backgroundColor: colors.background },
+    modalHeader:     { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
+    modalTitle:      { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    closeBtn:        { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    closeText:       { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
+    modalContent:    { flex: 1, padding: 12 },
+    kisiAd:          { fontSize: 13, color: colors.textMuted, marginBottom: 12, marginTop: 4 },
+    fieldRow:        { backgroundColor: colors.surface, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border },
+    fieldLabel:      { fontSize: 11, color: colors.textMuted, fontWeight: '500', marginBottom: 4 },
+    fieldLabel2:     { fontSize: 11, color: colors.textMuted, fontWeight: '500', marginBottom: 8, marginLeft: 4 },
+    fieldInput:      { fontSize: 14, color: colors.text },
+    rolRow:          { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    rolBtn:          { flex: 1, padding: 12, borderRadius: 10, backgroundColor: colors.background, borderWidth: 0.5, borderColor: colors.border, alignItems: 'center' },
+    rolBtnSecili:    { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderColor: colors.primary },
+    rolBtnText:      { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
+    rolBtnTextSecili:{ color: colors.textOnPrimary },
+    saveBtn:         { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
+    saveBtnDisabled: { opacity: 0.4 },
+    saveBtnText:     { color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' },
+    sonucKart:       { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 0.5, borderColor: colors.border },
+    sonucBaslik:     { fontSize: 15, fontWeight: '600', color: colors.primaryAccent, marginBottom: 12 },
+    sonucSatir:      { marginBottom: 8 },
+    sonucEtiket:     { fontSize: 11, color: colors.textMuted, fontWeight: '500', marginBottom: 2 },
+    sonucDeger:      { fontSize: 14, color: colors.text },
+    sonucSifre:      { fontSize: 16, color: colors.text, fontFamily: 'monospace' as any, letterSpacing: 1 },
+    whatsappBtn:     { backgroundColor: '#25D366', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 8 },
+    whatsappBtnDisabled: { opacity: 0.4 },
+    whatsappBtnText: { color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' },
+    kapatBtn:        { backgroundColor: colors.background, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32, borderWidth: 0.5, borderColor: colors.border },
+    kapatBtnText:    { color: colors.textSecondary, fontSize: 15, fontWeight: '500' },
+  });

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Modal,
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../storage/supabaseClient';
 import { getOrganizationId, getRole } from '../services/authState';
+import { useTheme } from '../theme';
 
 type Building = {
   id: string;
@@ -17,6 +18,8 @@ const BOSH_FORM = { ad: '', il_ilce: '', mahalle: '', cadde_sokak: '', kapi_no: 
 
 export default function SitelerScreen({ navigation }: any) {
   const role = getRole();
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -114,7 +117,7 @@ export default function SitelerScreen({ navigation }: any) {
       <ScrollView style={styles.content} scrollEnabled nestedScrollEnabled showsVerticalScrollIndicator>
         {yukleniyor ? (
           <View style={styles.empty}>
-            <ActivityIndicator size="large" color="#0f6e56" />
+            <ActivityIndicator size="large" color={colors.primaryAccent} />
           </View>
         ) : buildings.length === 0 ? (
           <View style={styles.empty}>
@@ -193,7 +196,7 @@ export default function SitelerScreen({ navigation }: any) {
                 <TextInput
                   style={styles.fieldInput}
                   placeholder={f.placeholder}
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor={colors.placeholder}
                   value={form[f.key]}
                   onChangeText={v => setForm(prev => ({ ...prev, [f.key]: v }))}
                 />
@@ -205,7 +208,7 @@ export default function SitelerScreen({ navigation }: any) {
               disabled={kaydediyor}
             >
               {kaydediyor
-                ? <ActivityIndicator color="#fff" />
+                ? <ActivityIndicator color={colors.textOnPrimary} />
                 : <Text style={styles.saveBtnText}>Kaydet</Text>
               }
             </TouchableOpacity>
@@ -216,38 +219,39 @@ export default function SitelerScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#fff', lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
-  ekleBtn: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  ekleBtnText: { color: '#fff', fontSize: 13, fontWeight: '500' },
-  content: { flex: 1, padding: 12 },
-  empty: { alignItems: 'center', marginTop: 80, gap: 10 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: '#888' },
-  emptySub: { fontSize: 12, color: '#bbb', textAlign: 'center', paddingHorizontal: 32 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  cardAd: { fontSize: 15, fontWeight: '500', color: '#1a1a1a', marginBottom: 2 },
-  cardSub: { fontSize: 12, color: '#0f6e56', marginBottom: 2 },
-  cardAlt: { fontSize: 12, color: '#888' },
-  cardActions: { flexDirection: 'column', gap: 6, marginLeft: 10 },
-  duzenleBtn: { backgroundColor: '#e1f5ee', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  duzenleText: { fontSize: 11, color: '#0f6e56', fontWeight: '500' },
-  silBtn: { backgroundColor: '#fee2e2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  silText: { fontSize: 11, color: '#dc2626', fontWeight: '500' },
-  modal: { flex: 1, backgroundColor: '#f5f5f0' },
-  modalHeader: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
-  modalTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
-  closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
-  modalContent: { flex: 1, padding: 12 },
-  fieldRow: { backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  fieldLabel: { fontSize: 11, color: '#888', fontWeight: '500', marginBottom: 4 },
-  fieldInput: { fontSize: 14, color: '#1a1a1a' },
-  saveBtn: { backgroundColor: '#1a2e1a', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 32 },
-  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
-});
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+    header: { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    backText: { fontSize: 28, color: colors.textOnPrimary, lineHeight: 32 },
+    headerTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    ekleBtn: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+    ekleBtnText: { color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' },
+    content: { flex: 1, padding: 12 },
+    empty: { alignItems: 'center', marginTop: 80, gap: 10 },
+    emptyIcon: { fontSize: 48 },
+    emptyText: { fontSize: 15, color: colors.textMuted },
+    emptySub: { fontSize: 12, color: colors.placeholder, textAlign: 'center', paddingHorizontal: 32 },
+    card: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border },
+    cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
+    cardAd: { fontSize: 15, fontWeight: '500', color: colors.text, marginBottom: 2 },
+    cardSub: { fontSize: 12, color: colors.primaryAccent, marginBottom: 2 },
+    cardAlt: { fontSize: 12, color: colors.textMuted },
+    cardActions: { flexDirection: 'column', gap: 6, marginLeft: 10 },
+    duzenleBtn: { backgroundColor: colors.accentSurface, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+    duzenleText: { fontSize: 11, color: colors.primaryAccent, fontWeight: '500' },
+    silBtn: { backgroundColor: colors.errorSurface, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+    silText: { fontSize: 11, color: colors.error, fontWeight: '500' },
+    modal: { flex: 1, backgroundColor: colors.background },
+    modalHeader: { backgroundColor: colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
+    modalTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+    closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    closeText: { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
+    modalContent: { flex: 1, padding: 12 },
+    fieldRow: { backgroundColor: colors.surface, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border },
+    fieldLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '500', marginBottom: 4 },
+    fieldInput: { fontSize: 14, color: colors.text },
+    saveBtn: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+    saveBtnText: { color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' },
+  });
