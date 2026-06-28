@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../storage/supabaseClient';
+import { useTheme } from '../theme';
 
 interface Props {
   label: string;
@@ -11,6 +12,9 @@ interface Props {
 }
 
 export default function KimlikFoto({ label, onFotoSecildi, initialOn, initialArka }: Props) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+
   const [on, setOn] = useState(initialOn ?? '');
   const [arka, setArka] = useState(initialArka ?? '');
   const [yukleniyor, setYukleniyor] = useState(false);
@@ -122,12 +126,12 @@ export default function KimlikFoto({ label, onFotoSecildi, initialOn, initialArk
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  label: { fontSize: 11, color: '#888', fontWeight: '500', marginBottom: 8 },
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
+  container: { padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.borderLight },
+  label: { fontSize: 11, color: colors.textMuted, fontWeight: '500', marginBottom: 8 },
   row: { flexDirection: 'row', gap: 8 },
-  fotoBtn: { flex: 1, height: 80, backgroundColor: '#f5f5f0', borderRadius: 8, borderWidth: 0.5, borderColor: '#e0e0e0', alignItems: 'center', justifyContent: 'center' },
+  fotoBtn: { flex: 1, height: 80, backgroundColor: colors.background, borderRadius: 8, borderWidth: 0.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   fotoBtnDisabled: { opacity: 0.5 },
-  fotoBtnText: { fontSize: 12, color: '#888' },
+  fotoBtnText: { fontSize: 12, color: colors.textMuted },
   foto: { width: '100%', height: '100%', borderRadius: 8 },
 });
