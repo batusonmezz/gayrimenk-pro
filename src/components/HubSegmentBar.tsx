@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useTheme } from '../theme';
 
 interface HubSegmentBarProps {
   tabs: string[];
@@ -7,11 +8,10 @@ interface HubSegmentBarProps {
   onTabPress: (index: number) => void;
 }
 
-const PRIMARY = '#0f6e56'; // colors.primaryAccent
-
 export default function HubSegmentBar({ tabs, activeIndex, onTabPress }: HubSegmentBarProps) {
+  const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+    <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border }}>
       {tabs.map((tab, i) => (
         <TouchableOpacity
           key={tab}
@@ -21,7 +21,7 @@ export default function HubSegmentBar({ tabs, activeIndex, onTabPress }: HubSegm
         >
           <Text style={{
             fontWeight: i === activeIndex ? '700' : '400',
-            color: i === activeIndex ? PRIMARY : '#6B7280',
+            color: i === activeIndex ? colors.primaryAccent : colors.textMuted,
             fontSize: 14,
           }}>
             {tab}
@@ -33,7 +33,7 @@ export default function HubSegmentBar({ tabs, activeIndex, onTabPress }: HubSegm
               left: 0,
               right: 0,
               height: 2,
-              backgroundColor: PRIMARY,
+              backgroundColor: colors.primaryAccent,
             }} />
           )}
         </TouchableOpacity>
