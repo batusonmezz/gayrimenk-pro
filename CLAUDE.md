@@ -421,41 +421,43 @@ fix: backgroundColor colors.primary -> isDark ? colors.primaryAccent
   muhtemelen yari-koyu ara durum (diger ekranlar henuz acik) ya da dark
   palet ince ayar gerekebilir. DARK ROTUS olarak en sona not edildi.
 
+**5-2d/e — TAMAMLANDI:** HubSegmentBar useTheme'e gecti. App.tsx MainTabs +
+SozlesmelerHub + KisilerHub useTheme + backgroundColor: colors.background
+(cerceve dark: tab bar, hub zeminleri, segment cubugu). Cihaz test OK.
+
+**5-3 — AGIR EKRANLAR (token donusumu, makeStyles + hard-coded->token):**
+Yeni token eklendi: info (#1a6fa8/dark #5a9fd4) + infoSurface (#e8f4fd/dark
+#1a2a3a). Tint'ler mevcut Surface token'larina (successSurface/warningSurface/
+errorSurface/accentSurface). Cift-set durum renkleri birlestirildi
+(#27ae60/#2e7d32->success vb.).
+
+- **5-3a — TAMAMLANDI:** KayitlarScreen + ListeScreen. ListeScreen'de getDurum
+  refactor: renk yerine durumKey ('aktif'|'bitiyor'|'gecmis') donduruyor,
+  component icinde durumRenk map ile token'a cevriliyor (pure function useTheme
+  cagiramaz). Odeme Takibi mavi info butonu. Cihaz test OK.
+- **5-3b — TAMAMLANDI:** KisilerScreen + MalSahibiScreen + SitelerScreen.
+  OZEL: KisilerScreen whatsappBtn '#25D366' DOKUNULMADI (WhatsApp marka).
+  MalSahibiScreen raporAl HTML template string ATLANDI (PDF CSS'i, RN degil).
+  Dark fix butonlari: davetBtn/rolBtnSecili/saveBtn/secili/raporBtn. Cihaz test
+  OK (PDF hala beyaz/normal).
+
 **KALAN (yeni oturumda buradan devam):**
-- **5-2d:** HubSegmentBar.tsx — StyleSheet YOK, 3 inline hard-coded
-  (PRIMARY='#0f6e56' -> colors.primaryAccent, '#E5E7EB' -> colors.border,
-  '#6B7280' -> colors.textMuted). useTheme'e baglanacak (makeStyles gerekmez,
-  inline veya component ici style). SozlesmelerHub/KisilerHub bunu kullaniyor.
-- **AGIR EKRANLAR (en buyuk is):** ~370 hard-coded renk. FormScreen ~88,
-  OdemeTakip ~56, Kisiler ~45, Liste ~36, Siteler ~28, MalSahibi ~26,
-  Preview ~25, Kayitlar ~19, Research ~18, kucuk bilesenler (PersonPicker ~14,
-  KimlikFoto ~5, ChatBox ~4, ContractCard ~2). Grup grup token'a cevrilecek
-  (makeStyles deseni + dark buton fix). Cift-set durum renkleri
-  (#27ae60/#2e7d32, #e74c3c/#dc2626, #f39c12/#e65100) token'a birlestirilecek.
-- **StatusBar reaktif:** 8 dosyada sabit (HomeScreen light-content, 7 dark-content).
-  isDark'a gore dinamik yapilacak. (Tab ekranlari StatusBar import etmiyor.)
-- **TOGGLE (en son):** ProfilScreen "Gece Modu" satiri (su an "Yakinda") ->
-  gercek toggle. setMode ile light/dark/system secimi. Tum ekranlar token'a
-  gectikten SONRA baglanacak.
-- **DARK ROTUS (toggle sonrasi):** Tum uygulama koyu iken taze gozle dark
-  palet gozden gecmesi. HomeScreen dashboard "ice sinmeyen" his + genel
-  kontrast/ton ayari. App.tsx loading dali hard-coded '#f5f5f0' da o zaman.
+- **5-3c — FormScreen** (~88 renk, EN BUYUK dosya, tek basina). Yeni oturum sart.
+- **5-3d:** OdemeTakipScreen (~56) + PreviewScreen (~25). OdemeTakip'te info/durum
+  renkleri yogun olabilir.
+- **5-3e:** ResearchScreen (~18) + kucuk bilesenler (PersonPicker, KimlikFoto,
+  ChatBox, ContractCard).
+- **StatusBar reaktif:** 8 dosyada sabit barStyle, isDark'a gore dinamik.
+- **TOGGLE (en son):** ProfilScreen "Gece Modu" satiri ("Yakinda") -> gercek
+  toggle, setMode ile light/dark/system. Tum ekranlar token'a gectikten SONRA.
+- **DARK ROTUS:** Tum uygulama koyu iken taze gozle palet gozden gecmesi.
+  App.tsx loading dali '#f5f5f0' da o zaman. (Kullanici daha once dashboard
+  "ice sinmedi" demisti — muhtemelen yari-koyu ara durumdandi, hepsi bitince
+  yeniden bakilacak.)
 
 **Onemli — useColorScheme canli degisimi yakalamiyor:** Dev'de telefon
 sistem temasi degisince RELOAD gerekiyor (Android). Gercek kullanimda sorun
 degil; toggle baglaninca uygulama icinden aninda degisecek.
-
-**Kalan adimlar (roadmap):**
-- 5-2 ve sonrasi: 8 "temiz" ekran (zaten colors import eden: HomeScreen,
-  ProfilScreen, LoginScreen, SignupScreen, WelcomeScreen, ForgotPassword,
-  ResetPassword, ForcePasswordChange) + HubSegmentBar -> useTheme'e gecir.
-  Mekanik (import { colors } -> const { colors } = useTheme()).
-- Sonra: ~370 hard-coded renkli AGIR ekranlar (FormScreen ~88, OdemeTakip ~56,
-  Kisiler ~45, Liste ~36, Siteler ~28, MalSahibi ~26, Preview ~25, Kayitlar ~19,
-  Research ~18, kucuk bilesenler) grup grup token'a cevrilir. Cift-set durum
-  renkleri (#27ae60/#2e7d32 vb.) birlestirilir.
-- Son: StatusBar reaktif (8 dosya sabit) + ProfilScreen "Gece Modu" toggle'i
-  gercek (light/dark/system secimi) + App.tsx loading dali hard-coded '#f5f5f0'.
 
 **ACIK BORC (onceden):** Migration repo senkronu — 016_storage_buckets/017/018
 Dashboard'da var, repo'da .sql yok. 019'dan itibaren senkron.
