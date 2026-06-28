@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, ThemeProvider } from './src/theme';
+import { colors, ThemeProvider, useTheme } from './src/theme';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
 import * as auth from './src/services/auth';
@@ -63,6 +63,7 @@ function ProfilTabIcon({ color, focused }: { color: string; focused: boolean }) 
 }
 
 function MainTabs() {
+  const { colors } = useTheme();
   const [role, setRoleState] = useState(getRole());
   useEffect(() => {
     if (!role) {
