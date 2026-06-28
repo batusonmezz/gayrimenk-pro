@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { supabase } from '../storage/supabaseClient';
+import { useTheme } from '../theme';
 
 type PersonRow = {
   id: string;
@@ -20,6 +21,9 @@ type Props = {
 };
 
 export default function PersonPicker({ visible, onClose, onSelect }: Props) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+
   const [persons, setPersons] = useState<PersonRow[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,19 +59,19 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={s.container}>
-        <View style={s.header}>
-          <Text style={s.title}>Kayıtlı Kiracı Seç</Text>
-          <TouchableOpacity onPress={onClose} style={s.closeBtn}>
-            <Text style={s.closeText}>✕</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Kayıtlı Kişi Seç</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <Text style={styles.closeText}>✕</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={s.searchRow}>
+        <View style={styles.searchRow}>
           <TextInput
-            style={s.searchInput}
+            style={styles.searchInput}
             placeholder="Ad veya TC ile ara..."
-            placeholderTextColor="#aaa"
+            placeholderTextColor={colors.placeholder}
             value={query}
             onChangeText={setQuery}
             autoCapitalize="none"
@@ -75,10 +79,10 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
         </View>
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color="#1a2e1a" />
+          <ActivityIndicator style={{ marginTop: 40 }} color={isDark ? colors.primaryAccent : colors.primary} />
         ) : filtered.length === 0 ? (
-          <View style={s.empty}>
-            <Text style={s.emptyText}>Henüz kayıtlı kişi yok</Text>
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>Henüz kayıtlı kişi yok</Text>
           </View>
         ) : (
           <FlatList
@@ -86,7 +90,7 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={s.row}
+                style={styles.row}
                 onPress={async () => {
                   // Seçim anında foto + banka bilgisini ayrı sorguyla çek (liste MB'larca base64 yüklemesin)
                   try {
@@ -121,11 +125,11 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={s.name}>{item.ad_soyad}</Text>
-                {item.telefon ? <Text style={s.sub}>{item.telefon}</Text> : null}
+                <Text style={styles.name}>{item.ad_soyad}</Text>
+                {item.telefon ? <Text style={styles.sub}>{item.telefon}</Text> : null}
               </TouchableOpacity>
             )}
-            ItemSeparatorComponent={() => <View style={s.sep} />}
+            ItemSeparatorComponent={() => <View style={styles.sep} />}
           />
         )}
       </View>
@@ -133,18 +137,18 @@ export default function PersonPicker({ visible, onClose, onSelect }: Props) {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0' },
-  header: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
-  title: { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
+  title: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
   closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   closeText: { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
-  searchRow: { backgroundColor: '#fff', padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#e0e0e0' },
-  searchInput: { backgroundColor: '#f5f5f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: '#1a1a1a' },
+  searchRow: { backgroundColor: colors.surface, padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.border },
+  searchInput: { backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: colors.text },
   empty: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 14, color: '#888' },
-  row: { backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14 },
-  name: { fontSize: 15, fontWeight: '500', color: '#1a1a1a' },
-  sub: { fontSize: 12, color: '#888', marginTop: 2 },
-  sep: { height: 0.5, backgroundColor: '#e0e0e0', marginHorizontal: 16 },
+  emptyText: { fontSize: 14, color: colors.textMuted },
+  row: { backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 14 },
+  name: { fontSize: 15, fontWeight: '500', color: colors.text },
+  sub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  sep: { height: 0.5, backgroundColor: colors.border, marginHorizontal: 16 },
 });
