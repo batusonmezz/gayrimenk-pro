@@ -396,6 +396,55 @@ ekranlar token'a gecmis olacak, hicbir yer karismayacak).
 **Test yontemi:** Toggle bitene kadar dark mode telefon SISTEM temasi ile
 test edilir (mode='system' sayesinde useTheme'e gecmis ekranlar otomatik koyu olur).
 
+**5-2 — useTheme gecisi (makeStyles deseni):**
+Desen: import { colors } -> import { useTheme }; const styles =
+StyleSheet.create({ -> const makeStyles = (colors, isDark) =>
+StyleSheet.create({; component basina const { colors, isDark } =
+useTheme(); const styles = makeStyles(colors, isDark);. Dark buton
+fix: backgroundColor colors.primary -> isDark ? colors.primaryAccent
+: colors.primary (dark'ta primary arka plana cok yakin, buton kayboluyor).
+
+- **5-2a — TAMAMLANDI:** 4 auth ekrani (LoginScreen, SignupScreen,
+  WelcomeScreen, ForgotPasswordScreen) useTheme'e gecti. 3'unde dark buton
+  fix (Welcome'da colors.primary butonu yoktu, dokunulmadi). Cihaz test OK.
+- **5-2b — TAMAMLANDI:** ResetPasswordScreen, ForcePasswordChangeScreen,
+  ProfilScreen useTheme'e gecti. ProfilScreen'de 2 inline '#fff' ->
+  colors.textOnPrimary (Hesabi Sil buton metni + ActivityIndicator);
+  rgba(0,0,0,0.5) modal overlay'e dokunulmadi. Avatar calisiyor. Cihaz test OK.
+- **5-2c — TAMAMLANDI:** HomeScreen useTheme'e gecti. KRITIK: StatKart +
+  YaklasanList sub-komponentleri module-level styles/colors kullaniyordu;
+  cozum = her 3 component (HomeScreen + 2 sub) kendi icinde useTheme() +
+  makeStyles() cagiriyor, tek makeStyles factory paylasiliyor. 6 hard-coded
+  -> token; tekrarBtn dark fix; 3 token'siz renk (userEmail rgba +
+  roleBadge rgba x2) header'da koyu yesil zemin oldugu icin DOKUNULMADI.
+  Cihaz test OK ama kullanici "dashboard gorunumu tam ice sinmedi" dedi —
+  muhtemelen yari-koyu ara durum (diger ekranlar henuz acik) ya da dark
+  palet ince ayar gerekebilir. DARK ROTUS olarak en sona not edildi.
+
+**KALAN (yeni oturumda buradan devam):**
+- **5-2d:** HubSegmentBar.tsx — StyleSheet YOK, 3 inline hard-coded
+  (PRIMARY='#0f6e56' -> colors.primaryAccent, '#E5E7EB' -> colors.border,
+  '#6B7280' -> colors.textMuted). useTheme'e baglanacak (makeStyles gerekmez,
+  inline veya component ici style). SozlesmelerHub/KisilerHub bunu kullaniyor.
+- **AGIR EKRANLAR (en buyuk is):** ~370 hard-coded renk. FormScreen ~88,
+  OdemeTakip ~56, Kisiler ~45, Liste ~36, Siteler ~28, MalSahibi ~26,
+  Preview ~25, Kayitlar ~19, Research ~18, kucuk bilesenler (PersonPicker ~14,
+  KimlikFoto ~5, ChatBox ~4, ContractCard ~2). Grup grup token'a cevrilecek
+  (makeStyles deseni + dark buton fix). Cift-set durum renkleri
+  (#27ae60/#2e7d32, #e74c3c/#dc2626, #f39c12/#e65100) token'a birlestirilecek.
+- **StatusBar reaktif:** 8 dosyada sabit (HomeScreen light-content, 7 dark-content).
+  isDark'a gore dinamik yapilacak. (Tab ekranlari StatusBar import etmiyor.)
+- **TOGGLE (en son):** ProfilScreen "Gece Modu" satiri (su an "Yakinda") ->
+  gercek toggle. setMode ile light/dark/system secimi. Tum ekranlar token'a
+  gectikten SONRA baglanacak.
+- **DARK ROTUS (toggle sonrasi):** Tum uygulama koyu iken taze gozle dark
+  palet gozden gecmesi. HomeScreen dashboard "ice sinmeyen" his + genel
+  kontrast/ton ayari. App.tsx loading dali hard-coded '#f5f5f0' da o zaman.
+
+**Onemli — useColorScheme canli degisimi yakalamiyor:** Dev'de telefon
+sistem temasi degisince RELOAD gerekiyor (Android). Gercek kullanimda sorun
+degil; toggle baglaninca uygulama icinden aninda degisecek.
+
 **Kalan adimlar (roadmap):**
 - 5-2 ve sonrasi: 8 "temiz" ekran (zaten colors import eden: HomeScreen,
   ProfilScreen, LoginScreen, SignupScreen, WelcomeScreen, ForgotPassword,
