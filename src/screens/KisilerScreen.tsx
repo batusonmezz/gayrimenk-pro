@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  TextInput, Modal, Alert, ActivityIndicator,
+  TextInput, Modal, Alert, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -141,6 +141,7 @@ export default function KisilerScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>‹</Text>

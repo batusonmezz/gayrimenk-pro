@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Modal, Alert, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../storage/supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
@@ -352,6 +352,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>‹</Text>

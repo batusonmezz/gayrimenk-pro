@@ -60,7 +60,7 @@ export default function LoginScreen({ navigation, route }: Props) {
       behavior="padding"
       style={[styles.container, { paddingBottom: insets.bottom }]}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"

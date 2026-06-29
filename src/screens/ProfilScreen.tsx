@@ -125,7 +125,7 @@ export default function ProfilScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.profileHeader}>
         <TouchableOpacity onPress={handleAvatarPress} disabled={uploading} activeOpacity={0.7}
           style={{ position: 'relative' }}>
