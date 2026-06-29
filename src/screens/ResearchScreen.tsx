@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTheme } from '../theme';
 
 export default function ResearchScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+
   const [query, setQuery] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +39,7 @@ export default function ResearchScreen({ navigation }: any) {
           <TextInput
             style={styles.queryInput}
             placeholder="Örn: 2026 kira artış oranı sınırı nedir?"
-            placeholderTextColor="#bbb"
+            placeholderTextColor={colors.placeholder}
             value={query}
             onChangeText={setQuery}
             multiline
@@ -43,7 +47,7 @@ export default function ResearchScreen({ navigation }: any) {
           />
         </View>
         <TouchableOpacity style={styles.researchBtn} onPress={runResearch} disabled={loading} activeOpacity={0.8}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.researchBtnText}>🔍 Mevzuat Araştır</Text>}
+          {loading ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={styles.researchBtnText}>🔍 Mevzuat Araştır</Text>}
         </TouchableOpacity>
         {result ? (
           <View style={styles.resultCard}>
@@ -56,19 +60,19 @@ export default function ResearchScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0', overflow: 'auto' as any },
-  header: { backgroundColor: '#fff', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 0.5, borderBottomColor: '#e0e0e0' },
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, overflow: 'auto' as any },
+  header: { backgroundColor: colors.surface, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#555', lineHeight: 32 },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: '#1a1a1a' },
+  backText: { fontSize: 28, color: colors.textSecondary, lineHeight: 32 },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
   content: { flex: 1, padding: 12 },
-  queryBox: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: '#e0e0e0', overflow: 'hidden' },
-  queryLabel: { fontSize: 11, letterSpacing: 1.5, color: '#888', fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#f0f0f0' },
-  queryInput: { padding: 12, fontSize: 14, color: '#1a1a1a', minHeight: 80, textAlignVertical: 'top' },
-  researchBtn: { backgroundColor: '#1a2e1a', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
-  researchBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
-  resultCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 0.5, borderColor: '#e0e0e0', marginBottom: 32 },
-  resultTitle: { fontSize: 13, fontWeight: '500', color: '#0f6e56', marginBottom: 10 },
-  resultText: { fontSize: 13, lineHeight: 22, color: '#444' },
+  queryBox: { backgroundColor: colors.surface, borderRadius: 12, marginBottom: 10, borderWidth: 0.5, borderColor: colors.border, overflow: 'hidden' },
+  queryLabel: { fontSize: 11, letterSpacing: 1.5, color: colors.textMuted, fontWeight: '500', padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.surfaceSubtle },
+  queryInput: { padding: 12, fontSize: 14, color: colors.text, minHeight: 80, textAlignVertical: 'top' },
+  researchBtn: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
+  researchBtnText: { color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' },
+  resultCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, borderWidth: 0.5, borderColor: colors.border, marginBottom: 32 },
+  resultTitle: { fontSize: 13, fontWeight: '500', color: colors.primaryAccent, marginBottom: 10 },
+  resultText: { fontSize: 13, lineHeight: 22, color: colors.textSecondary },
 });
