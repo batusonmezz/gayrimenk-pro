@@ -9,6 +9,7 @@ import { getCurrentUser } from '../services/auth';
 import { WebView } from 'react-native-webview';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import { useTheme } from '../theme';
 
 type Payment = {
   id: string;
@@ -43,17 +44,17 @@ function formatTL(kurus: number): string {
   return `${tl.toLocaleString('tr-TR')},${krs} ₺`;
 }
 
-function hesaplaDepozitoDurum(durum: string): { label: string; renk: string } {
-  if (durum === 'odendi')     return { label: 'Onaylandı',  renk: '#27ae60' };
-  if (durum === 'reddedildi') return { label: 'Reddedildi', renk: '#7f8c8d' };
-  return { label: 'Bekliyor', renk: '#f39c12' };
+function hesaplaDepozitoDurum(durum: string): { label: string; durumKey: string } {
+  if (durum === 'odendi')     return { label: 'Onaylandı',  durumKey: 'success' };
+  if (durum === 'reddedildi') return { label: 'Reddedildi', durumKey: 'muted' };
+  return { label: 'Bekliyor', durumKey: 'warning' };
 }
 
-function hesaplaEtiket(p: Payment, bugun: Date): { label: string; renk: string } {
-  if (p.durum === 'odendi') return { label: 'Ödendi', renk: '#27ae60' };
-  if (p.durum === 'reddedildi') return { label: 'Reddedildi', renk: '#7f8c8d' };
+function hesaplaEtiket(p: Payment, bugun: Date): { label: string; durumKey: string } {
+  if (p.durum === 'odendi')     return { label: 'Ödendi',     durumKey: 'success' };
+  if (p.durum === 'reddedildi') return { label: 'Reddedildi', durumKey: 'muted' };
   const vade = parseYerelTarih(p.vade_tarihi!);
-  return vade < bugun ? { label: 'Gecikti', renk: '#e74c3c' } : { label: 'Bekliyor', renk: '#f39c12' };
+  return vade < bugun ? { label: 'Gecikti', durumKey: 'error' } : { label: 'Bekliyor', durumKey: 'warning' };
 }
 
 function dekontHtml(b64: string, mime: string | null): string {
@@ -86,6 +87,14 @@ function dekontHtml(b64: string, mime: string | null): string {
 
 export default function OdemeTakipScreen({ navigation, route }: any) {
   const { contractId, baslik } = route.params as { contractId: string; baslik: string };
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
+  const DURUM_RENK: Record<string, string> = {
+    success: colors.success,
+    warning: colors.warning,
+    error:   colors.error,
+    muted:   colors.textMuted,
+  };
   const [odemeler, setOdemeler] = useState<Payment[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState<string | null>(null);
@@ -257,7 +266,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
 
   const dekontAksiyon = (p: Payment) => {
     if (yukleniyorId === p.id) {
-      return <ActivityIndicator size="small" color="#1a6fa8" style={{ marginTop: 8 }} />;
+      return <ActivityIndicator size="small" color={colors.info} style={{ marginTop: 8 }} />;
     }
     const buttons = [];
     if (p.dekont_var) {
@@ -322,7 +331,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   }, [kiralar, bugun]);
 
   const renderItem = ({ item }: { item: Payment }) => {
-    const { label, renk } = hesaplaEtiket(item, bugun);
+    const { label, durumKey } = hesaplaEtiket(item, bugun);
     const aksiyon = dekontAksiyon(item);
     return (
       <View style={styles.row}>
@@ -332,7 +341,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
             <Text style={styles.rowVade}>Vade: {formatTarih(item.vade_tarihi!)}</Text>
           </View>
           <View style={styles.rowRight}>
-            <Text style={[styles.rowEtiket, { color: renk }]}>{label}</Text>
+            <Text style={[styles.rowEtiket, { color: DURUM_RENK[durumKey] }]}>{label}</Text>
             <Text style={styles.rowTutar}>{formatTL(item.tutar_kurus!)}</Text>
           </View>
         </View>
@@ -355,7 +364,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
 
       {yukleniyor ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#0f6e56" />
+          <ActivityIndicator size="large" color={colors.primaryAccent} />
         </View>
       ) : hata ? (
         <View style={styles.center}>
@@ -371,29 +380,29 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
             <View style={styles.ozetRow}>
               <View style={styles.ozetItem}>
                 <Text style={styles.ozetLabel}>TAHSİL EDİLEN</Text>
-                <Text style={[styles.ozetTutar, { color: '#27ae60' }]}>{formatTL(ozet.tahsilKurus)}</Text>
+                <Text style={[styles.ozetTutar, { color: colors.success }]}>{formatTL(ozet.tahsilKurus)}</Text>
               </View>
               <View style={styles.ozetDivider} />
               <View style={styles.ozetItem}>
                 <Text style={styles.ozetLabel}>KALAN</Text>
-                <Text style={[styles.ozetTutar, { color: ozet.kalanKurus > 0 ? '#e74c3c' : '#27ae60' }]}>
+                <Text style={[styles.ozetTutar, { color: ozet.kalanKurus > 0 ? colors.error : colors.success }]}>
                   {formatTL(ozet.kalanKurus)}
                 </Text>
               </View>
             </View>
             <View style={styles.ozetSep} />
             <View style={styles.ozetBadgeRow}>
-              <View style={[styles.badge, { backgroundColor: '#e8f8f0' }]}>
-                <Text style={[styles.badgeNum, { color: '#27ae60' }]}>{ozet.odendiSay}</Text>
-                <Text style={[styles.badgeLabel, { color: '#27ae60' }]}>Ödendi</Text>
+              <View style={[styles.badge, { backgroundColor: colors.successSurface }]}>
+                <Text style={[styles.badgeNum, { color: colors.success }]}>{ozet.odendiSay}</Text>
+                <Text style={[styles.badgeLabel, { color: colors.success }]}>Ödendi</Text>
               </View>
-              <View style={[styles.badge, { backgroundColor: '#fef9e7' }]}>
-                <Text style={[styles.badgeNum, { color: '#f39c12' }]}>{ozet.bekliyorSay}</Text>
-                <Text style={[styles.badgeLabel, { color: '#f39c12' }]}>Bekliyor</Text>
+              <View style={[styles.badge, { backgroundColor: colors.warningSurface }]}>
+                <Text style={[styles.badgeNum, { color: colors.warning }]}>{ozet.bekliyorSay}</Text>
+                <Text style={[styles.badgeLabel, { color: colors.warning }]}>Bekliyor</Text>
               </View>
-              <View style={[styles.badge, { backgroundColor: '#fdf0f0' }]}>
-                <Text style={[styles.badgeNum, { color: '#e74c3c' }]}>{ozet.geciktiSay}</Text>
-                <Text style={[styles.badgeLabel, { color: '#e74c3c' }]}>Gecikti</Text>
+              <View style={[styles.badge, { backgroundColor: colors.errorSurface }]}>
+                <Text style={[styles.badgeNum, { color: colors.error }]}>{ozet.geciktiSay}</Text>
+                <Text style={[styles.badgeLabel, { color: colors.error }]}>Gecikti</Text>
               </View>
             </View>
           </View>
@@ -404,7 +413,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
             renderItem={renderItem}
             ListHeaderComponent={() => {
               if (!depozito) return null;
-              const { label, renk } = hesaplaDepozitoDurum(depozito.durum);
+              const { label, durumKey } = hesaplaDepozitoDurum(depozito.durum);
               const aksiyon = dekontAksiyon(depozito);
               return (
                 <View style={styles.depozitRow}>
@@ -414,7 +423,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
                       <Text style={styles.depozitAlt}>Detay sözleşmede</Text>
                     </View>
                     <View style={styles.rowRight}>
-                      <Text style={[styles.rowEtiket, { color: renk }]}>{label}</Text>
+                      <Text style={[styles.rowEtiket, { color: DURUM_RENK[durumKey] }]}>{label}</Text>
                     </View>
                   </View>
                   {aksiyon}
@@ -447,7 +456,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
           <View style={styles.modalContent}>
             {dekontYukleniyor ? (
               <View style={styles.center}>
-                <ActivityIndicator size="large" color="#0f6e56" />
+                <ActivityIndicator size="large" color={colors.primaryAccent} />
               </View>
             ) : dekontBase64 ? (
               <WebView
@@ -469,54 +478,54 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f0' },
-  header: { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, color: '#fff', lineHeight: 32 },
-  headerText: { flex: 1 },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: '#fff' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  hataText: { fontSize: 14, color: '#e74c3c' },
-  bosText: { fontSize: 14, color: '#888' },
-  ozetCard: { backgroundColor: '#fff', margin: 12, borderRadius: 12, padding: 14, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  ozetRow: { flexDirection: 'row', alignItems: 'center' },
-  ozetItem: { flex: 1, alignItems: 'center', gap: 4 },
-  ozetLabel: { fontSize: 10, color: '#aaa', fontWeight: '600', letterSpacing: 0.5 },
-  ozetTutar: { fontSize: 16, fontWeight: '700' },
-  ozetDivider: { width: 1, height: 40, backgroundColor: '#f0f0f0' },
-  ozetSep: { height: 1, backgroundColor: '#f0f0f0', marginVertical: 10 },
-  ozetBadgeRow: { flexDirection: 'row', gap: 6 },
-  badge: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
-  badgeNum: { fontSize: 20, fontWeight: '700' },
-  badgeLabel: { fontSize: 10, fontWeight: '600', marginTop: 1, letterSpacing: 0.3 },
-  list: { paddingHorizontal: 12, paddingBottom: 24 },
-  row: { backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 6, flexDirection: 'column', borderWidth: 0.5, borderColor: '#e8e8e8' },
-  rowLeft: { flex: 1, gap: 4 },
-  rowDonem: { fontSize: 14, fontWeight: '500', color: '#1a1a1a' },
-  rowVade: { fontSize: 11, color: '#aaa' },
-  rowRight: { alignItems: 'flex-end', gap: 4 },
-  rowEtiket: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3 },
-  rowTutar: { fontSize: 14, fontWeight: '500', color: '#333' },
-  depozitRow: { backgroundColor: '#eef4ff', borderRadius: 10, padding: 12, marginBottom: 6, flexDirection: 'column', borderWidth: 0.5, borderColor: '#b3cdf5' },
-  depozitLabel: { fontSize: 14, fontWeight: '600', color: '#1a1a1a' },
-  depozitAlt: { fontSize: 11, color: '#aaa' },
-  rowInner:        { flexDirection: 'row', alignItems: 'center' },
-  aksiyonRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  dekontGorBtn:    { paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', borderRadius: 6, backgroundColor: '#e8f4fd' },
-  dekontGorText:   { fontSize: 12, color: '#1a6fa8', fontWeight: '500' },
-  dekontYukleBtn:  { paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', borderRadius: 6, backgroundColor: '#f0f0f0' },
-  dekontYukleText: { fontSize: 12, color: '#555', fontWeight: '500' },
-  onayBtn:         { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: '#e6f5ea' },
-  onayText:        { fontSize: 12, color: '#1e7e45', fontWeight: '600' },
-  redBtn:          { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: '#fdecec' },
-  redText:         { fontSize: 12, color: '#c0392b', fontWeight: '600' },
-  modal:           { flex: 1, backgroundColor: '#f5f5f0' },
-  modalHeader:     { backgroundColor: '#1a2e1a', paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
-  modalTitle:      { flex: 1, fontSize: 16, fontWeight: '500', color: '#fff' },
-  closeBtn:        { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  closeText:       { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
-  modalContent:    { flex: 1 },
-  dekontWeb:       { flex: 1, backgroundColor: '#1a1a1a' },
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container:        { flex: 1, backgroundColor: colors.background },
+  header:           { backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  backBtn:          { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  backText:         { fontSize: 28, color: colors.textOnPrimary, lineHeight: 32 },
+  headerText:       { flex: 1 },
+  headerTitle:      { fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+  headerSub:        { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  center:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  hataText:         { fontSize: 14, color: colors.error },
+  bosText:          { fontSize: 14, color: colors.textMuted },
+  ozetCard:         { backgroundColor: colors.surface, margin: 12, borderRadius: 12, padding: 14, borderWidth: 0.5, borderColor: colors.border },
+  ozetRow:          { flexDirection: 'row', alignItems: 'center' },
+  ozetItem:         { flex: 1, alignItems: 'center', gap: 4 },
+  ozetLabel:        { fontSize: 10, color: colors.textFaint, fontWeight: '600', letterSpacing: 0.5 },
+  ozetTutar:        { fontSize: 16, fontWeight: '700' },
+  ozetDivider:      { width: 1, height: 40, backgroundColor: colors.borderLight },
+  ozetSep:          { height: 1, backgroundColor: colors.borderLight, marginVertical: 10 },
+  ozetBadgeRow:     { flexDirection: 'row', gap: 6 },
+  badge:            { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
+  badgeNum:         { fontSize: 20, fontWeight: '700' },
+  badgeLabel:       { fontSize: 10, fontWeight: '600', marginTop: 1, letterSpacing: 0.3 },
+  list:             { paddingHorizontal: 12, paddingBottom: 24 },
+  row:              { backgroundColor: colors.surface, borderRadius: 10, padding: 12, marginBottom: 6, flexDirection: 'column', borderWidth: 0.5, borderColor: colors.border },
+  rowLeft:          { flex: 1, gap: 4 },
+  rowDonem:         { fontSize: 14, fontWeight: '500', color: colors.text },
+  rowVade:          { fontSize: 11, color: colors.textFaint },
+  rowRight:         { alignItems: 'flex-end', gap: 4 },
+  rowEtiket:        { fontSize: 11, fontWeight: '600', letterSpacing: 0.3 },
+  rowTutar:         { fontSize: 14, fontWeight: '500', color: colors.text },
+  depozitRow:       { backgroundColor: colors.infoSurface, borderRadius: 10, padding: 12, marginBottom: 6, flexDirection: 'column', borderWidth: 0.5, borderColor: colors.border },
+  depozitLabel:     { fontSize: 14, fontWeight: '600', color: colors.text },
+  depozitAlt:       { fontSize: 11, color: colors.textFaint },
+  rowInner:         { flexDirection: 'row', alignItems: 'center' },
+  aksiyonRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  dekontGorBtn:     { paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', borderRadius: 6, backgroundColor: colors.infoSurface },
+  dekontGorText:    { fontSize: 12, color: colors.info, fontWeight: '500' },
+  dekontYukleBtn:   { paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', borderRadius: 6, backgroundColor: colors.surfaceSubtle },
+  dekontYukleText:  { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
+  onayBtn:          { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: colors.successSurface },
+  onayText:         { fontSize: 12, color: colors.success, fontWeight: '600' },
+  redBtn:           { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: colors.errorSurface },
+  redText:          { fontSize: 12, color: colors.error, fontWeight: '600' },
+  modal:            { flex: 1, backgroundColor: colors.background },
+  modalHeader:      { backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
+  modalTitle:       { flex: 1, fontSize: 16, fontWeight: '500', color: colors.textOnPrimary },
+  closeBtn:         { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  closeText:        { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
+  modalContent:     { flex: 1 },
+  dekontWeb:        { flex: 1, backgroundColor: '#1a1a1a' },
 });
