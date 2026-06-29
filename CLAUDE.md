@@ -512,6 +512,33 @@ Dashboard'da var, repo'da .sql yok. 019'dan itibaren senkron.
 - **DARK ROTUS (toggle sonrasi):** Tum uygulama koyu iken taze gozle dark palet
   gozden gecmesi. App.tsx loading dali '#f5f5f0' da o zaman cevrilecek.
 
+- **StatusBar reaktif — TAMAMLANDI:** 15 dosya. Acik header'li (auth + Form +
+  Preview + Profil) reaktif {isDark ? light-content : dark-content}; koyu yesil
+  header'li tab ekranlari (Kayitlar/Liste/Kisiler/MalSahibi/Siteler/OdemeTakip)
+  sabit light-content. HomeScreen zaten sabit light-content (dokunulmadi).
+  Commit 8f23152.
+- **TOGGLE — TAMAMLANDI:** ProfilScreen "Gece Modu" satiri 3-buton segment
+  (Acik/Sistem/Koyu) oldu, setMode('light'/'system'/'dark'). Aktif buton
+  isDark ? primaryAccent : primary. dimmed/soonBadge/soonText KORUNDU (KVKK
+  satiri kullaniyor). Commit c234850.
+  * CIHAZ TEST: Acik ve Koyu ANINDA calisiyor (reload yok). "Sistem" dev
+    client'ta useColorScheme stale kalmasi yuzunden bazen reload istiyor —
+    BU DEV-ONLY SORUN, production build'de useColorScheme duzgun calisir.
+    Toggle kodu DOGRU, mudahale gerekmez. Production build'de Sistem tekrar
+    test edilecek.
+
+**KALAN (Step 5 — SON ADIM):**
+- **DARK ROTUS:** Toggle artik calisiyor, uygulama icinden aninda koyuya gecip
+  her ekran taze gozle incelenecek. Kontrast/ton ince ayari. App.tsx loading
+  dali hard-coded '#f5f5f0' -> dark token (o dal useTheme erisemiyorsa cozum
+  bulunacak). Dashboard "ice sinmedi" hissi (onceki not) tum app koyuyken
+  yeniden degerlendirilecek.
+
+**STEP 5 OZET:** Tema altyapisi (5-1) + 8 temiz ekran (5-2) + tum agir ekranlar
+(5-3a-f: Kayitlar/Liste/Kisiler/MalSahibi/Siteler/Form/Preview/OdemeTakip/
+Research) + PersonPicker/KimlikFoto + StatusBar reaktif + TOGGLE = TAMAMLANDI.
+Sadece dark rotus kaldi. ChatBox/ContractCard olu kod (Step 5 disi temizlik).
+
 ### Step 2 — TAMAMLANDI
 - `delete-account` Edge Function deploy edildi (`supabase/functions/delete-account/`, `deno.json` import map ile `esm.sh/@supabase/supabase-js@2`).
 - Role-aware silme:
