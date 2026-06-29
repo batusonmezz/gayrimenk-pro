@@ -484,6 +484,34 @@ degil; toggle baglaninca uygulama icinden aninda degisecek.
 **ACIK BORC (onceden):** Migration repo senkronu — 016_storage_buckets/017/018
 Dashboard'da var, repo'da .sql yok. 019'dan itibaren senkron.
 
+- **5-3e — TAMAMLANDI:** OdemeTakipScreen (523 satir, en karmasik). 2 pure
+  helper key refactor (hesaplaDepozitoDurum + hesaplaEtiket -> durumKey
+  'success'|'warning'|'error'|'muted'; component ici DURUM_RENK map).
+  StyleSheet + inline badge/tutar/ternary + 3 ActivityIndicator token'a gecti.
+  DOKUNULMADI: dekontHtml() WebView template, dekontWeb.bg '#1a1a1a', rgba'lar.
+  Cihaz test OK (durum etiketleri, badge'ler, dekont WebView calisiyor).
+- **5-3f — ResearchScreen TAMAMLANDI:** hukuk arastirma ekrani useTheme'e
+  gecti (researchBtn dark fix, resultTitle->primaryAccent, resultText->
+  textSecondary). DIKKAT: ResearchScreen su an HICBIR NAVIGATOR'A BAGLI DEGIL
+  (erisilmez). Token'i hazir; ileride HomeScreen'e veya emlakci menusune buton
+  eklenerek baglanabilir. Cihaz testi yapilamadi (erisim yok).
+
+**STEP 5 SONRASI TEMIZLIK NOTU (dark mode disi):**
+- **ChatBox.tsx + ContractCard.tsx = OLU KOD** (hicbir yerde import/render
+  edilmiyor). Dark mode'a GECIRILMEDI (kullanici gormuyor). Karar: ya silinecek
+  ya da ileride kullanilacak. Step 5 bitince ayri "dead code" commit'i.
+- **ResearchScreen navigasyona bagli degil** — ileride baglanirsa aktif olur.
+
+**KALAN (Step 5):**
+- **StatusBar reaktif:** 8 dosyada sabit barStyle (HomeScreen light-content,
+  digerleri dark-content) -> isDark'a gore dinamik. (Tab ekranlari StatusBar
+  import etmiyor olabilir, kontrol et.)
+- **TOGGLE (en son):** ProfilScreen "Gece Modu" satiri ("Yakinda" disabled) ->
+  gercek toggle, setMode ile light/dark/system. Tum ekranlar token'a gectikten
+  SONRA baglanacak (= SIMDI hazir, StatusBar'dan sonra).
+- **DARK ROTUS (toggle sonrasi):** Tum uygulama koyu iken taze gozle dark palet
+  gozden gecmesi. App.tsx loading dali '#f5f5f0' da o zaman cevrilecek.
+
 ### Step 2 — TAMAMLANDI
 - `delete-account` Edge Function deploy edildi (`supabase/functions/delete-account/`, `deno.json` import map ile `esm.sh/@supabase/supabase-js@2`).
 - Role-aware silme:
