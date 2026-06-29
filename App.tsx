@@ -166,6 +166,7 @@ const screenOptions = {
 };
 
 function AppInner() {
+  const { colors, isDark } = useTheme();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePasswordState] = useState(false);
@@ -240,8 +241,8 @@ function AppInner() {
   if (loading) {
     return (
       <SafeAreaProvider>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f0' }}>
-          <ActivityIndicator size="large" color="#1a2e1a" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+          <ActivityIndicator size="large" color={isDark ? colors.primaryAccent : colors.primary} />
         </View>
       </SafeAreaProvider>
     );
