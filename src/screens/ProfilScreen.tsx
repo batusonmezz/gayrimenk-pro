@@ -27,7 +27,7 @@ import { supabase } from '../storage/supabaseClient';
 const DESTEK_WHATSAPP = '905449444108';
 
 export default function ProfilScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, mode, setMode } = useTheme();
   const styles = makeStyles(colors, isDark);
   const [email, setEmailState] = useState<string | null>(getEmail);
   const [role, setRoleState] = useState<string | null>(getRole);
@@ -170,10 +170,34 @@ export default function ProfilScreen() {
 
         <Text style={styles.sectionLabel}>AYARLAR</Text>
         <View style={styles.settingsCard}>
-          <View style={styles.row}>
-            <Ionicons name="moon-outline" size={20} color={colors.textFaint} style={styles.rowIcon} />
-            <Text style={[styles.rowLabel, styles.dimmed]}>Gece Modu</Text>
-            <View style={styles.soonBadge}><Text style={styles.soonText}>Yakında</Text></View>
+          <View style={styles.themeRow}>
+            <View style={styles.themeLabel}>
+              <Ionicons name="moon-outline" size={20} color={colors.primaryAccent} style={styles.rowIcon} />
+              <Text style={styles.rowLabel}>Gece Modu</Text>
+            </View>
+            <View style={styles.themeSegment}>
+              <TouchableOpacity
+                style={[styles.themeBtn, mode === 'light' && styles.themeBtnActive]}
+                onPress={() => setMode('light')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.themeBtnText, mode === 'light' && styles.themeBtnTextActive]}>Açık</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.themeBtn, mode === 'system' && styles.themeBtnActive]}
+                onPress={() => setMode('system')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.themeBtnText, mode === 'system' && styles.themeBtnTextActive]}>Sistem</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.themeBtn, mode === 'dark' && styles.themeBtnActive]}
+                onPress={() => setMode('dark')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.themeBtnText, mode === 'dark' && styles.themeBtnTextActive]}>Koyu</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.rowDivider} />
           <TouchableOpacity style={styles.row} onPress={handleAvatarPress} activeOpacity={0.7}>
@@ -440,5 +464,36 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boole
   },
   modalBtnDisabled: {
     opacity: 0.4,
+  },
+  themeRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  themeLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  themeSegment: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  themeBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: colors.surfaceSubtle,
+  },
+  themeBtnActive: {
+    backgroundColor: isDark ? colors.primaryAccent : colors.primary,
+  },
+  themeBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  themeBtnTextActive: {
+    color: colors.textOnPrimary,
   },
 });
