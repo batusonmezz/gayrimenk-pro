@@ -28,6 +28,9 @@ export default {
       backgroundColor: '#1a2e1a',
     },
     ios: {
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
       supportsTablet: true,
       bundleIdentifier: getPackage(),
     },
