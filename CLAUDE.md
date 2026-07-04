@@ -160,7 +160,7 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 **Açık borçlar:**
 - Mal sahibi/kiracı karşı taraf görünürlüğü (kişi görünürlüğü — ad+telefon, kimlik foto HAYIR)
 - `ListeScreen` + `MalSahibiScreen` rol uyarlama
-- **Migration repo senkronu:** 016_storage_buckets / 017 (record_dekont) / 018 (upload_dekont drop) Supabase Dashboard'da uygulandı ama repo'da .sql dosyası yok. 019'dan itibaren repo senkron.
+- **Migration repo senkronu:** ✅ TAMAMLANDI — 020_storage_buckets.sql / 021_record_dekont.sql / 022_upload_dekont_drop.sql repo'ya belgelendi (Temmuz 2026). Canlıya uygulanmadı, sadece referans.
 
 **Ertelenmiş:**
 - **Faz 3.4 kalan** — `FormScreen` rol uyarlama (çok kompleks, ayrı faz)
@@ -483,6 +483,59 @@ degil; toggle baglaninca uygulama icinden aninda degisecek.
 
 **ACIK BORC (onceden):** Migration repo senkronu — 016_storage_buckets/017/018
 Dashboard'da var, repo'da .sql yok. 019'dan itibaren senkron.
+✅ KAPANDI (Temmuz 2026): 020/021/022 olarak repo'ya belgelendi.
+
+## RLS + STORAGE GUVENLIK DENETIMI (Temmuz 2026) — TAMAMLANDI
+
+Production oncesi tam guvenlik denetimi yapildi. SONUC: "Faz 2 RLS borcu"
+korkusu ASILSIZ cikti — hicbir "USING (true)" yok, sistem bastan dogru
+kurulmus. Detay:
+
+- **Org izolasyonu:** Tum tablolar auth_org_id() ile korunuyor, NULL'a karsi
+  guvenli. Cross-org erisim imkansiz.
+- **Rol bazli erisim (contracts):** 005+010 birlesik policy dogru — emlakci
+  org bazli, mal_sahibi/kiraci sadece kendi sozlesmesi (user_id VEYA
+  person_belongs_to_user).
+- **contract_items/photos:** SADECE org bazli gorunuyor AMA PostgreSQL RLS
+  cascade sayesinde subquery contracts_select'e tabi — kiraci sadece kendi
+  sozlesmesinin esya/foto'sunu gorur. BILINCLI TASARIM, sizinti YOK.
+- **Helper fonksiyonlar (hepsi SECURITY DEFINER + STABLE, dogru):**
+  auth_org_id(), auth_role(), user_can_access_contract() (4 OR dal: emlakci/
+  user_id x2/person x2, outer org guard), person_belongs_to_user() (org guard
+  disaridan geliyor).
+- **payments yazma:** RLS default-deny, tum yazma SECURITY DEFINER RPC ile:
+  create_payment_schedule (emlakci-only), record_dekont/upload_dekont (kiraci+
+  emlakci, mal_sahibi HARIC, path guard'lari), approve/reject_payment
+  (mal_sahibi+emlakci, kiraci HARIC). Hepsi org + erisim cift kontrollu.
+- **Storage (KRITIK — hepsi dogru):**
+  * kimlik-belgeleri: PRIVATE + emlakci-only (foldername[1]=org AND
+    role=emlakci). TC kimlik fotograflari en siki korumada.
+  * dekontlar: PRIVATE + taraf-bazli (user_can_access_contract), emlakci siler.
+  * avatars: public, kendi dosyasina yazma.
+
+**REPO SENKRON — TAMAMLANDI:** Eksik uc migration (016_storage/017_record_dekont/
+018_upload_dekont_drop) canlidan cekilip repo'ya BELGELENDI: 020_storage_buckets.sql,
+021_record_dekont.sql, 022_upload_dekont_drop.sql. Bu dosyalar
+canliya UYGULANMADI (zaten canlida vardi), sadece repo referansi.
+NOT: repo'da 016 adi iki kez (016_dashboard_stats + eski Dashboard 016_storage);
+storage backfill 020 numarasiyla yazildi, cakisma yok.
+
+**GUVENLIK SONUCU: RLS + storage + payments PRODUCTION'A HAZIR.**
+
+## PRODUCTION ONCESI KALAN (guvenlik disi):
+- **Email confirmation:** Supabase'de kapali (dev icin). Davet sistemi var ama
+  production'da acilmali (Faz 6). Auth trigger handle_new_user() production'da
+  test edilmeli.
+- **Karsi taraf gorunurlugu (OZELLIK EKSIGI, guvenlik degil):** persons sadece
+  emlakci-only. Mal_sahibi/kiraci birbirinin ad+telefonunu persons'tan
+  cekemiyor (sadece form_data gomulu metinden). Planlanmisti, eksik kaldi.
+  Production'i engellemez.
+- **get_dashboard_stats:** mal_sahibi/kiraci dali sadece eski *_user_id
+  mekanizmasi kullaniyor; persons.user_id ile davet edilenler bos dashboard
+  gorebilir (veri eksikligi, guvenlik degil).
+- **Yasal/store:** Gizlilik politikasi URL'si (KVKK — TC kimlik/kira verisi),
+  hesap silme dogrulamasi (delete-account var, teyit edilecek), Play/App Store
+  data safety formlari, Apple Developer onayi (BEKLIYOR — iOS on kosulu).
 
 - **5-3e — TAMAMLANDI:** OdemeTakipScreen (523 satir, en karmasik). 2 pure
   helper key refactor (hesaplaDepozitoDurum + hesaplaEtiket -> durumKey
