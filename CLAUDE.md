@@ -147,6 +147,21 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Var olan hesabın şifresini sıfırlar — re-invite DEĞİL (re-invite person↔user bağını koparır, sözleşmeleri kaybettirir)
 - SMTP kurulumu Faz 6 e-posta onayı için de gerekli (ortak altyapı)
 
+**SIFRE SIFIRLAMA — COZULDU (Temmuz 2026):** Sorun kodda DEGILDI, iki Supabase
+Dashboard ayarindaydi:
+1. Email Templates > Reset Password sablonu {{ .ConfirmationURL }} (link)
+   kullaniyordu, localhost:3000'e gidiyordu. {{ .Token }} (6 haneli kod) gosteren
+   Turkce sablonla degistirildi.
+2. Email OTP length 8 idi, ama ResetPasswordScreen 6 haneli bekliyor (maxLength=6,
+   validasyon kod.length!==6). Supabase OTP length 8->6 yapildi.
+Akis: OTP-kod bazli (deep link YOK). Kullanici e-postadaki 6 haneli kodu elle
+girer -> verifyOtp(type:recovery) -> updateUser(password). Cihazda test edildi,
+CALISIYOR. Kod degisikligi/yeni build GEREKMEDI (Supabase tarafi ayar).
+NOT: Email OTP expiration 3600 (1 saat, iyi). Site URL hala localhost:3000 ama
+sifre sifirlama kod-bazli oldugu icin kullanilmiyor. AMA email confirmation
+acilmadan ONCE Site URL duzeltilmeli (o zaman dogrulama e-postasi Site URL'ye
+link atacak).
+
 **Push 3 — Hesabımı sil**
 - Apple App Store 5.1.1(v) zorunluluğu (iOS çıkışından önce şart)
 - KVKK uyumu
