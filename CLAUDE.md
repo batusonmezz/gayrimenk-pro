@@ -552,6 +552,64 @@ storage backfill 020 numarasiyla yazildi, cakisma yok.
   hesap silme dogrulamasi (delete-account var, teyit edilecek), Play/App Store
   data safety formlari, Apple Developer onayi (BEKLIYOR — iOS on kosulu).
 
+## ============================================
+## PRODUCTION YOL HARITASI (Temmuz 2026 — guncel)
+## ============================================
+
+### BITEN (production-hazir):
+- Dark mode (Step 5) TAMAM: tum ekranlar + StatusBar reaktif + toggle
+  (Acik/Sistem/Koyu) + loading. app.config.js userInterfaceStyle:automatic.
+  versionCode 15, v7.4.0 production build alindi, Play Store internal test'te.
+- Guvenlik denetimi TAMAM: RLS + storage + payments hepsi saglam (detay yukarida
+  "RLS + STORAGE GUVENLIK DENETIMI" bolumunde). Repo canliyla senkron (020/021/022).
+- Sifre sifirlama TAMAM: 6 haneli OTP kod akisi calisiyor (Supabase sablon +
+  OTP length 6 ayari).
+- Apple Developer onayi GELDI, iOS TestFlight calisiyor.
+- Hesap silme calisiyor (ProfilScreen > Hesabi Sil, delete-account Edge Function).
+- Gizlilik politikasi HTML taslagi hazir (Batu'nun elinde, onaylandi).
+
+### KALAN — PRODUCTION ICIN (oncelik sirasi):
+
+1. **Gizlilik politikasini bir URL'ye koy** [Batu yapacak, kolay]
+   - App/Play Store gizlilik politikasi URL'si ister.
+   - GitHub Pages onerildi (ucretsiz, repo var, ~10 dk). Domain BEKLENMEZ.
+   - HTML dosyasi hazir, sadece barindirilacak.
+
+2. **Email confirmation ac + Site URL duzelt** [DIKKATLI — birlikte yapilacak]
+   - Su an Supabase'de email confirmation KAPALI (dev icin). Production'da acilmali.
+   - AMA once Site URL duzeltilmeli: su an localhost:3000. Confirmation acilinca
+     dogrulama e-postasi Site URL'ye link atar -> localhost:3000 bozuk olur.
+   - Auth trigger handle_new_user() confirmation ACIKKEN de org+user olusturuyor mu
+     TEST edilmeli (signup + davet akislari).
+   - Bu is Supabase ayari + test, muhtemelen kod degisikligi az/yok.
+
+3. **Store formlari** [Batu dolduracak, Claude ne yazacagini soyleyecek]
+   - Play Console: Data Safety formu.
+   - App Store Connect: App Privacy.
+   - Toplanan veriler: ad-soyad, telefon, e-posta, TC kimlik no, kimlik fotografi,
+     IBAN (mal sahibi + kiraci), kira sozlesmesi, odeme/dekont, profil fotografi.
+   - Icerik derecelendirme, hedef kitle, kategori.
+
+4. **Domain (gayrimenk.com)** [ERTELENMIS — kritik degil]
+   - Su an BOS: sadece NS kayitlari (Turhost'a bagli), A/MX/CNAME/TXT hepsi bos.
+   - Web sitesi YOK, e-posta YOK. Turhost panelinde kurulmasi lazim (Batu/arkadasi).
+   - Uc olasi kullanim: (a) gizlilik politikasi barindirma — GitHub Pages yeterli,
+     domain gerekmez; (b) @gayrimenk.com e-posta — Supabase varsayilani calisiyor,
+     zorunlu degil; (c) kurumsal web. Hicbiri kritik yolda DEGIL.
+
+### KALAN — OZELLIK/IYILESTIRME (production'i engellemez):
+- Dark rotus: tum app koyuyken taze gozle palet ince ayari (kontrast/ton).
+  Toggle calisiyor, uygulama icinden aninda koyuya gecip her ekran incelenebilir.
+- Karsi taraf gorunurlugu: persons emlakci-only; mal_sahibi/kiraci birbirinin
+  ad+telefonunu goremiyor (sadece form_data). Planlanmisti, eksik.
+- get_dashboard_stats: mal_sahibi/kiraci dali sadece eski *_user_id mekanizmasi;
+  persons.user_id ile davet edilenler bos dashboard gorebilir.
+- ChatBox.tsx + ContractCard.tsx: olu kod, silinebilir (ayri temizlik commit'i).
+- ResearchScreen: navigasyona bagli degil; ileride HomeScreen'e buton eklenebilir.
+- makeStyles imzalari: bazi ekranlarda (colors: any), digerlerinde ReturnType.
+  Tutarli hale getirilebilir (kozmetik).
+## ============================================
+
 - **5-3e — TAMAMLANDI:** OdemeTakipScreen (523 satir, en karmasik). 2 pure
   helper key refactor (hesaplaDepozitoDurum + hesaplaEtiket -> durumKey
   'success'|'warning'|'error'|'muted'; component ici DURUM_RENK map).
