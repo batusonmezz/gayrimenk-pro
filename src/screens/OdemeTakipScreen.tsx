@@ -104,6 +104,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   const [dekontBase64, setDekontBase64] = useState<string | null>(null);
   const [dekontYukleniyor, setDekontYukleniyor] = useState(false);
   const [dekontMime, setDekontMime] = useState<string | null>(null);
+  const [planSilmeYukleniyor, setPlanSilmeYukleniyor] = useState(false);
 
   const bugun = useMemo(() => {
     const d = new Date();
@@ -262,6 +263,38 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
       { text: 'Vazgeç', style: 'cancel' },
       { text: 'Reddet', style: 'destructive', onPress: () => odemeDurumDegistir(paymentId, 'reject_payment', 'reddedildi') },
     ]);
+  };
+
+  const planSilOnayla = async () => {
+    setPlanSilmeYukleniyor(true);
+    try {
+      const { data, error } = await supabase.rpc('delete_payment_schedule', {
+        p_contract_id: contractId,
+      });
+      if (error) throw error;
+      setOdemeler([]);
+      Alert.alert('Başarılı', `${data} ödeme kaydı silindi.`);
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message ?? 'Ödeme planı silinemedi.');
+    } finally {
+      setPlanSilmeYukleniyor(false);
+    }
+  };
+
+  const handlePlanSil = () => {
+    Alert.alert(
+      'Ödeme Tablosunu Sil',
+      'Bu sözleşmenin tüm ödeme kayıtları silinecek. Dekontu olan veya onaylanmış ödeme varsa işlem reddedilir.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: 'Devam', onPress: () => {
+          Alert.alert('Emin misiniz?', 'Bu işlem geri alınamaz.', [
+            { text: 'Vazgeç', style: 'cancel' },
+            { text: 'Sil', style: 'destructive', onPress: planSilOnayla },
+          ]);
+        }},
+      ]
+    );
   };
 
   const dekontAksiyon = (p: Payment) => {
@@ -435,6 +468,18 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
             showsVerticalScrollIndicator={true}
             style={{ flex: 1 }}
           />
+
+          {role === 'emlakci' && (
+            <TouchableOpacity
+              onPress={handlePlanSil}
+              disabled={planSilmeYukleniyor}
+              style={[styles.planSilBtn, planSilmeYukleniyor && styles.planSilBtnDisabled]}
+            >
+              {planSilmeYukleniyor
+                ? <ActivityIndicator size="small" color={colors.error} />
+                : <Text style={styles.planSilText}>Ödeme Tablosunu Sil</Text>}
+            </TouchableOpacity>
+          )}
         </>
       )}
 
@@ -529,4 +574,7 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   closeText:        { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
   modalContent:     { flex: 1 },
   dekontWeb:        { flex: 1, backgroundColor: '#1a1a1a' },
+  planSilBtn:         { marginHorizontal: 12, marginTop: 4, marginBottom: 16, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: colors.errorSurface, borderWidth: 1, borderColor: colors.error },
+  planSilBtnDisabled: { opacity: 0.5 },
+  planSilText:        { fontSize: 13, fontWeight: '600', color: colors.error },
 });
