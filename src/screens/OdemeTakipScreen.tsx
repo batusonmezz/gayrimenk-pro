@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Modal, Alert, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../storage/supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
 import { getRole, getOrganizationId } from '../services/authState';
@@ -89,6 +90,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   const { contractId, baslik } = route.params as { contractId: string; baslik: string };
   const { colors, isDark } = useTheme();
   const styles = makeStyles(colors, isDark);
+  const insets = useSafeAreaInsets();
   const DURUM_RENK: Record<string, string> = {
     success: colors.success,
     warning: colors.warning,
@@ -470,15 +472,17 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
           />
 
           {role === 'emlakci' && (
-            <TouchableOpacity
-              onPress={handlePlanSil}
-              disabled={planSilmeYukleniyor}
-              style={[styles.planSilBtn, planSilmeYukleniyor && styles.planSilBtnDisabled]}
-            >
-              {planSilmeYukleniyor
-                ? <ActivityIndicator size="small" color={colors.error} />
-                : <Text style={styles.planSilText}>Ödeme Tablosunu Sil</Text>}
-            </TouchableOpacity>
+            <View style={{ paddingBottom: insets.bottom + 16 }}>
+              <TouchableOpacity
+                onPress={handlePlanSil}
+                disabled={planSilmeYukleniyor}
+                style={[styles.planSilBtn, planSilmeYukleniyor && styles.planSilBtnDisabled]}
+              >
+                {planSilmeYukleniyor
+                  ? <ActivityIndicator size="small" color={colors.error} />
+                  : <Text style={styles.planSilText}>Ödeme Tablosunu Sil</Text>}
+              </TouchableOpacity>
+            </View>
           )}
         </>
       )}
@@ -574,7 +578,7 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   closeText:        { fontSize: 16, color: 'rgba(255,255,255,0.8)' },
   modalContent:     { flex: 1 },
   dekontWeb:        { flex: 1, backgroundColor: '#1a1a1a' },
-  planSilBtn:         { marginHorizontal: 12, marginTop: 4, marginBottom: 16, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: colors.errorSurface, borderWidth: 1, borderColor: colors.error },
+  planSilBtn:         { marginHorizontal: 12, marginTop: 4, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: colors.errorSurface, borderWidth: 1, borderColor: colors.error },
   planSilBtnDisabled: { opacity: 0.5 },
   planSilText:        { fontSize: 13, fontWeight: '600', color: colors.error },
 });

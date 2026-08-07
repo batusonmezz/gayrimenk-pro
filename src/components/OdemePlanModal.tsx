@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 
 const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
@@ -68,6 +69,7 @@ function formatGunAy(d: Date): string {
 export default function OdemePlanModal({ visible, onClose, onConfirm, baslik, kiraTutariKurus, sozlesmeBaslangic }: OdemePlanModalProps) {
   const { colors, isDark } = useTheme();
   const styles = makeStyles(colors, isDark);
+  const insets = useSafeAreaInsets();
 
   const [odemeGunu, setOdemeGunu] = useState(1);
   const [ilkDonem, setIlkDonem] = useState(bugununIlkDonemi());
@@ -133,7 +135,7 @@ export default function OdemePlanModal({ visible, onClose, onConfirm, baslik, ki
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 32 }}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ödeme Günü</Text>
             <View style={styles.grid}>
@@ -206,7 +208,7 @@ export default function OdemePlanModal({ visible, onClose, onConfirm, baslik, ki
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 16 }]}>
           <TouchableOpacity style={styles.vazgecBtn} onPress={onClose}>
             <Text style={styles.vazgecText}>Vazgeç</Text>
           </TouchableOpacity>
@@ -250,7 +252,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boole
   toggleThumbAktif: { alignSelf: 'flex-end' },
   onizlemeKutu:     { backgroundColor: colors.infoSurface, borderRadius: 10, borderWidth: 0.5, borderColor: colors.border, padding: 14, gap: 4 },
   onizlemeText:     { fontSize: 13, color: colors.text },
-  footer:           { flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 0.5, borderTopColor: colors.border, backgroundColor: colors.background },
+  footer:           { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16, borderTopWidth: 0.5, borderTopColor: colors.border, backgroundColor: colors.background },
   vazgecBtn:        { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, backgroundColor: colors.surfaceSubtle },
   vazgecText:       { fontSize: 14, fontWeight: '500', color: colors.textSecondary },
   olusturBtn:       { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, backgroundColor: isDark ? colors.primaryAccent : colors.primary },
