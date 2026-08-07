@@ -293,6 +293,8 @@ export class SupabaseStorageService implements IStorageService {
         kiraci_person_id: (row.kiraci_person_id as string | null) ?? null,
         building_id: (row.building_id as string | null) ?? null,
         mal_sahibi_person_id: (row.mal_sahibi_person_id as string | null) ?? null,
+        aylikKiraKurus: row.aylik_kira_kurus as number,
+        tarihIso: (row.tarih as string | null) ?? null,
       };
     }));
   }

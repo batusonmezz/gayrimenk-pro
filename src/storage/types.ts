@@ -14,4 +14,6 @@ export interface SozlesmeKayit {
   kiraci_person_id?: string | null;
   building_id?: string | null;
   mal_sahibi_person_id?: string | null;
+  aylikKiraKurus?: number;
+  tarihIso?: string | null;
 }

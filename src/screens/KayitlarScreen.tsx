@@ -7,6 +7,7 @@ import { getRole } from '../services/authState';
 import { getCurrentUser } from '../services/auth';
 import { supabase } from '../storage/supabaseClient';
 import { useTheme } from '../theme';
+import OdemePlanModal from '../components/OdemePlanModal';
 
 export default function KayitlarScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
@@ -14,6 +15,7 @@ export default function KayitlarScreen({ navigation }: any) {
   const [role, setRoleState] = useState<string | null>(null);
   const [odemeCount, setOdemeCount] = useState<Record<string, number>>({});
   const [rpcYukleniyor, setRpcYukleniyor] = useState<string | null>(null);
+  const [planModalKayit, setPlanModalKayit] = useState<SozlesmeKayit | null>(null);
 
   const insets = useSafeAreaInsets();
   const isEmlakci = role === 'emlakci';
@@ -69,11 +71,18 @@ export default function KayitlarScreen({ navigation }: any) {
     ]);
   };
 
-  const handleOdemeTablosuOlustur = async (contractId: string) => {
+  const handleOdemeTablosuOlustur = async (
+    contractId: string,
+    p: { odemeGunu: number; ilkDonem: string; aySayisi: number; depozitoDahil: boolean }
+  ) => {
     setRpcYukleniyor(contractId);
     try {
       const { data, error } = await supabase.rpc('create_payment_schedule', {
         p_contract_id: contractId,
+        p_odeme_gunu: p.odemeGunu,
+        p_ilk_donem: p.ilkDonem,
+        p_ay_sayisi: p.aySayisi,
+        p_depozito_dahil: p.depozitoDahil,
       });
       if (error) throw error;
       if (data === 0) {
@@ -165,7 +174,7 @@ export default function KayitlarScreen({ navigation }: any) {
               )}
               {isEmlakci && (odemeCount[kayit.id] ?? 0) === 0 && (
                 <TouchableOpacity
-                  onPress={() => handleOdemeTablosuOlustur(kayit.id)}
+                  onPress={() => setPlanModalKayit(kayit)}
                   disabled={rpcYukleniyor === kayit.id}
                   style={[styles.odemeBtn, rpcYukleniyor === kayit.id && styles.odemeBtnDisabled]}
                 >
@@ -189,6 +198,19 @@ export default function KayitlarScreen({ navigation }: any) {
           ))
         )}
       </ScrollView>
+
+      <OdemePlanModal
+        visible={planModalKayit !== null}
+        onClose={() => setPlanModalKayit(null)}
+        onConfirm={(p) => {
+          const kayit = planModalKayit!;
+          setPlanModalKayit(null);
+          handleOdemeTablosuOlustur(kayit.id, p);
+        }}
+        baslik={planModalKayit ? `${planModalKayit.kiraya_veren_ad} → ${planModalKayit.kiraci_ad}` : ''}
+        kiraTutariKurus={planModalKayit?.aylikKiraKurus ?? 0}
+        sozlesmeBaslangic={planModalKayit?.tarihIso ?? null}
+      />
     </View>
   );
 }
