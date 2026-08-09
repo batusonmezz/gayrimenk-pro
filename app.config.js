@@ -17,7 +17,7 @@ export default {
   expo: {
     name: getName(),
     slug: 'gayrimenk-pro',
-    version: '7.4.0',
+    version: '7.5.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -35,7 +35,7 @@ export default {
       bundleIdentifier: getPackage(),
     },
     android: {
-      versionCode: 15,
+      versionCode: 16,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',

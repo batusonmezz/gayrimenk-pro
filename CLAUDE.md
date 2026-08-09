@@ -111,6 +111,32 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Optimistik güncelleme: RPC başarısında `setOdemeler` local state'i günceller, refetch yok
 - Dekont/ödeme çekirdeği (3.5a–d) tamamlandı
 
+**Faz 3.5e — Ödeme planı UI + tarih düzeltmeleri** (Ağustos 2026)
+- `OdemePlanModal.tsx` (yeni): ödeme günü grid (1-31 + "Ayın son günü" = 32),
+  ay atlatıcı ilk dönem seçici, 6/12/24 süre segmenti, depozito toggle
+  (varsayılan KAPALI), önizleme kutusu. Saf JS, yeni paket yok.
+- `ilkDonem` string'i ASLA `new Date('YYYY-MM-01')` ile parse edilmiyor (UTC
+  kayması); manuel split + yerel `Date` ctor. `parseYerelTarih` ile aynı kural.
+- `SozlesmeKayit`'e `aylikKiraKurus` + `tarihIso` opsiyonel alanları eklendi;
+  `SupabaseStorageService` mapper ham değerleri de döndürüyor (sorgu zaten
+  `select *`).
+- `KayitlarScreen`: buton artık modalı açıyor, RPC 5 parametreyle çağrılıyor.
+  Buton görünürlük koşulu (emlakçı + `odemeCount === 0`) değişmedi.
+- `OdemeTakipScreen`: emlakçı-only "Ödeme Tablosunu Sil" butonu, iki aşamalı
+  Alert, RPC hata mesajı kullanıcıya AYNEN gösteriliyor.
+- Safe area (commit `ba38db0`): sil butonu ve modal footer artık Android
+  navigasyon çubuğunun üstünde. Modal `pageSheet` olduğu için
+  `Math.max(insets.bottom, 12) + 16` taban değerli hesap.
+- Cihaz testi GEÇTİ: iki aşamalı onay, koruma reddi ("N kayıtta dekont veya
+  onaylanmış ödeme var"), ay sonu clamp (Aralık + "ayın son günü" → Şubat 28).
+- Gerçek org veri düzeltmesi: iki sözleşmenin `vade_tarihi` değerleri SQL ile
+  YERİNDE güncellendi (silme YOK) — dekont ve ödendi durumu korunsun diye.
+  Silme-yeniden kurma yapılsaydı Storage'daki dekont öksüz kalacaktı.
+- **Öğrenilen (açık borç):** tek korumalı satırı olan bir sözleşme uygulamada
+  kilitlenir — "Oluştur" butonu çıkmaz (`odemeCount > 0`), silme de reddedilir.
+  Çıkış yolu şu an sadece SQL. İleride kısmi silme ya da satır bazlı düzeltme
+  düşünülebilir.
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)

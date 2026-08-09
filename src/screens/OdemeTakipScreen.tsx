@@ -11,6 +11,7 @@ import { WebView } from 'react-native-webview';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '../theme';
+import ZamUygulaModal from '../components/ZamUygulaModal';
 
 type Payment = {
   id: string;
@@ -107,6 +108,8 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
   const [dekontYukleniyor, setDekontYukleniyor] = useState(false);
   const [dekontMime, setDekontMime] = useState<string | null>(null);
   const [planSilmeYukleniyor, setPlanSilmeYukleniyor] = useState(false);
+  const [zamModalVisible, setZamModalVisible] = useState(false);
+  const [zamYukleniyor, setZamYukleniyor] = useState(false);
 
   const bugun = useMemo(() => {
     const d = new Date();
@@ -132,23 +135,25 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
     [odemeler]
   );
 
+  const fetchOdemeler = useCallback(async () => {
+    setYukleniyor(true);
+    setHata(null);
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('id, tip, donem, tutar_kurus, vade_tarihi, durum, dekont_var')
+        .eq('contract_id', contractId)
+        .order('donem', { ascending: true });
+      if (error) setHata('Ödemeler yüklenemedi.');
+      else setOdemeler((data ?? []) as Payment[]);
+    } finally {
+      setYukleniyor(false);
+    }
+  }, [contractId]);
+
   useFocusEffect(useCallback(() => {
-    (async () => {
-      setYukleniyor(true);
-      setHata(null);
-      try {
-        const { data, error } = await supabase
-          .from('payments')
-          .select('id, tip, donem, tutar_kurus, vade_tarihi, durum, dekont_var')
-          .eq('contract_id', contractId)
-          .order('donem', { ascending: true });
-        if (error) setHata('Ödemeler yüklenemedi.');
-        else setOdemeler((data ?? []) as Payment[]);
-      } finally {
-        setYukleniyor(false);
-      }
-    })();
-  }, [contractId]));
+    fetchOdemeler();
+  }, [fetchOdemeler]));
 
   const handleDekontYukle = (paymentId: string) => {
     Alert.alert('Dekont Yükle', 'Dosya türünü seçin', [
@@ -280,6 +285,32 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
       Alert.alert('Hata', e?.message ?? 'Ödeme planı silinemedi.');
     } finally {
       setPlanSilmeYukleniyor(false);
+    }
+  };
+
+  const zamUygula = async ({ yeniTutarKurus, baslangicDonem }: { yeniTutarKurus: number; baslangicDonem: string }) => {
+    setZamYukleniyor(true);
+    try {
+      const { data, error } = await supabase.rpc('update_payment_amount', {
+        p_contract_id: contractId,
+        p_yeni_tutar_kurus: yeniTutarKurus,
+        p_baslangic_donem: baslangicDonem,
+      });
+      if (error) throw error;
+      const guncellenen = Number(data) || 0;
+      await fetchOdemeler();
+      if (guncellenen === 0) {
+        Alert.alert('Bilgi', 'Güncellenecek uygun ödeme satırı bulunamadı.');
+      } else {
+        Alert.alert(
+          'Başarılı',
+          `${guncellenen} ödeme satırı güncellendi.\n\nSözleşme kaydındaki kira tutarını da güncellemek için sözleşmeyi düzenleyin.`
+        );
+      }
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message ?? 'Zam uygulanamadı.');
+    } finally {
+      setZamYukleniyor(false);
     }
   };
 
@@ -474,6 +505,15 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
           {role === 'emlakci' && (
             <View style={{ paddingBottom: insets.bottom + 16 }}>
               <TouchableOpacity
+                onPress={() => setZamModalVisible(true)}
+                disabled={zamYukleniyor}
+                style={[styles.zamBtn, zamYukleniyor && styles.zamBtnDisabled]}
+              >
+                {zamYukleniyor
+                  ? <ActivityIndicator size="small" color={isDark ? colors.primaryAccent : colors.primary} />
+                  : <Text style={styles.zamText}>Zam Uygula</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={handlePlanSil}
                 disabled={planSilmeYukleniyor}
                 style={[styles.planSilBtn, planSilmeYukleniyor && styles.planSilBtnDisabled]}
@@ -524,6 +564,15 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
           </View>
         </View>
       </Modal>
+
+      <ZamUygulaModal
+        visible={zamModalVisible}
+        onClose={() => setZamModalVisible(false)}
+        onConfirm={(p) => { setZamModalVisible(false); zamUygula(p); }}
+        baslik={baslik}
+        mevcutTutarKurus={kiralar.length ? (kiralar[kiralar.length - 1].tutar_kurus ?? 0) : 0}
+        odemeler={odemeler.map(p => ({ tip: p.tip, donem: p.donem, durum: p.durum, dekontVar: p.dekont_var }))}
+      />
     </View>
   );
 }
@@ -581,4 +630,7 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   planSilBtn:         { marginHorizontal: 12, marginTop: 4, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: colors.errorSurface, borderWidth: 1, borderColor: colors.error },
   planSilBtnDisabled: { opacity: 0.5 },
   planSilText:        { fontSize: 13, fontWeight: '600', color: colors.error },
+  zamBtn:             { marginHorizontal: 12, marginTop: 4, marginBottom: 8, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: colors.surfaceSubtle, borderWidth: 1, borderColor: isDark ? colors.primaryAccent : colors.primary },
+  zamBtnDisabled:     { opacity: 0.5 },
+  zamText:            { fontSize: 14, fontWeight: '600', color: isDark ? colors.primaryAccent : colors.primary },
 });
