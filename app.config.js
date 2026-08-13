@@ -32,6 +32,7 @@ export default {
         ITSAppUsesNonExemptEncryption: false,
       },
       supportsTablet: false,
+      buildNumber: '2',
       bundleIdentifier: getPackage(),
     },
     android: {
