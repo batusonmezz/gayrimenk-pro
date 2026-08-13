@@ -31,7 +31,7 @@ export default {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
-      supportsTablet: true,
+      supportsTablet: false,
       bundleIdentifier: getPackage(),
     },
     android: {
