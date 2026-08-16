@@ -6,6 +6,16 @@ import { useTheme } from '../theme';
 
 type Filtre = 'Hepsi' | 'Aktif' | 'Bitiyor' | 'Süresi Geçmiş';
 
+const trNormalize = (s: string | null | undefined): string =>
+  (s ?? '')
+    .replace(/İ/g, 'I').replace(/ı/g, 'i')
+    .replace(/Ş/g, 'S').replace(/ş/g, 's')
+    .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+    .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+    .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+    .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+    .toLowerCase();
+
 function getDurum(bitis: string): { durum: Filtre; durumKey: 'aktif' | 'bitiyor' | 'gecmis'; kalanGun: number } {
   if (!bitis) return { durum: 'Aktif', durumKey: 'aktif', kalanGun: 999 };
   const parts = bitis.split('.');
@@ -44,12 +54,12 @@ export default function ListeScreen({ navigation }: any) {
     const { durum } = getDurum(bitis);
     if (filtre !== 'Hepsi' && durum !== filtre) return false;
     if (arama) {
-      const q = arama.toLowerCase();
+      const q = trNormalize(arama);
       return (
-        k.kiraci_ad?.toLowerCase().includes(q) ||
-        k.kiraya_veren_ad?.toLowerCase().includes(q) ||
-        k.formData?.kapi_no?.toLowerCase().includes(q) ||
-        k.formData?.cadde_sokak?.toLowerCase().includes(q)
+        trNormalize(k.kiraci_ad).includes(q) ||
+        trNormalize(k.kiraya_veren_ad).includes(q) ||
+        trNormalize(k.formData?.kapi_no).includes(q) ||
+        trNormalize(k.formData?.cadde_sokak).includes(q)
       );
     }
     return true;
