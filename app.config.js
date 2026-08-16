@@ -30,13 +30,15 @@ export default {
     ios: {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        NSPhotoLibraryUsageDescription: 'Kimlik belgesi ve ödeme dekontu fotoğraflarını sözleşmeye eklemek için fotoğraf arşivinize erişim gerekir. Seçtiğiniz fotoğraflar yalnızca ilgili sözleşme kaydına yüklenir.',
+        NSCameraUsageDescription: 'Kimlik belgesi ve ödeme dekontu fotoğrafı çekmek için kameraya erişim gerekir. Çektiğiniz fotoğraflar yalnızca ilgili sözleşme kaydına yüklenir.',
       },
       supportsTablet: false,
-      buildNumber: '2',
+      buildNumber: '3',
       bundleIdentifier: getPackage(),
     },
     android: {
-      versionCode: 16,
+      versionCode: 17,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
