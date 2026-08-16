@@ -173,7 +173,7 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
       const path = `${orgId}/${contractId}/${paymentId}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('dekontlar')
-        .upload(path, decode(base64), { contentType: mime, upsert: true });
+        .upload(path, decode(base64), { contentType: mime, upsert: true, cacheControl: '0' });
       if (upErr) throw upErr;
       const { error: rpcErr } = await supabase.rpc('record_dekont', {
         p_payment_id: paymentId, p_path: path, p_mime: mime,
