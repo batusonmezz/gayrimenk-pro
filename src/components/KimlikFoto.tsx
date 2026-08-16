@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-na
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../storage/supabaseClient';
 import { useTheme } from '../theme';
+import { fotografiJpegeCevir } from '../utils/imageJpeg';
 
 interface Props {
   label: string;
@@ -72,22 +73,25 @@ export default function KimlikFoto({ label, onFotoSecildi, initialOn, initialArk
       }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        base64: true,
         exif: false,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.9,
       });
-      if (!result.canceled && result.assets[0].base64) {
-        const base64 = result.assets[0].base64;
-        if (taraf === 'on') {
-          onRef.current = base64;
-          setOn(base64);
-          onFotoSecildi(base64, arkaRef.current);
-        } else {
-          arkaRef.current = base64;
-          setArka(base64);
-          onFotoSecildi(onRef.current, base64);
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        try {
+          const base64 = await fotografiJpegeCevir(asset.uri, asset.width);
+          if (taraf === 'on') {
+            onRef.current = base64;
+            setOn(base64);
+            onFotoSecildi(base64, arkaRef.current);
+          } else {
+            arkaRef.current = base64;
+            setArka(base64);
+            onFotoSecildi(onRef.current, base64);
+          }
+        } catch (e: any) {
+          Alert.alert('Hata', e?.message ?? 'Fotoğraf işlenemedi.');
         }
       }
     } finally {

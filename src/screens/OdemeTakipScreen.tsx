@@ -12,6 +12,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '../theme';
 import ZamUygulaModal from '../components/ZamUygulaModal';
+import { fotografiJpegeCevir } from '../utils/imageJpeg';
 
 type Payment = {
   id: string;
@@ -195,11 +196,16 @@ export default function OdemeTakipScreen({ navigation, route }: any) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, base64: true, exif: false, quality: 0.5,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, exif: false,
     });
-    if (result.canceled || !result.assets[0]?.base64) return;
+    if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    await dekontGonder(paymentId, asset.base64!, asset.mimeType ?? 'image/jpeg');
+    try {
+      const base64 = await fotografiJpegeCevir(asset.uri, asset.width);
+      await dekontGonder(paymentId, base64, 'image/jpeg');
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message ?? 'Fotoğraf işlenemedi.');
+    }
   };
 
   const dekontPdfSec = async (paymentId: string) => {
