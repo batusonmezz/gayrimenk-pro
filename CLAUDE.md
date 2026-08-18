@@ -137,6 +137,103 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
   Çıkış yolu şu an sadece SQL. İleride kısmi silme ya da satır bazlı düzeltme
   düşünülebilir.
 
+### Faz 3.6 — Magaza yayin sureci — 10-14 Agustos 2026
+
+**Gizlilik / yasal sayfalar (CANLI)**
+- Ayri PUBLIC repo: batusonmezz/gayrimenkpro-legal (kod repo'su private
+  kaliyor; GitHub Pages ucretsiz planda sadece public repo'dan yayinliyor)
+- https://batusonmezz.github.io/gayrimenkpro-legal/ (gizlilik + KVKK)
+- https://batusonmezz.github.io/gayrimenkpro-legal/hesap-silme.html
+- Politikada somut saklama sureleri var: sozlesme dosyasi 10 yil
+  (TBK 146 / TTK 82), mali kayitlar 5 yil (VUK 253)
+- Anthropic'e veri aktarimi, ucuncu kisi verisi sorumlulugu, reklam ve
+  izleme yok beyani, cihaz izinleri politikada aciklandi
+- Veri sorumlusu e-postasi: batusonmez4108@gmail.com
+- ACIK BORC: KVKK'nin istedigi periyodik imha mekanizmasi YOK. Sureler
+  taahhut ediliyor ama otomatik silme calismasi yazilmadi. Ticari satistan
+  once KVKK avukatina baktirilacak.
+
+**Google Play**
+- 10 beyan tamamlandi (veri guvenligi, icerik derecelendirme 3+/herkes,
+  hedef kitle 18+, reklam yok, saglik yok, resmi kurum yok, oturum acma
+  bilgileri, gizlilik URL'si, finans, reklam kimligi)
+- Veri guvenliginde 10 veri turu beyan edildi, hepsi "toplanıyor /
+  paylasilmiyor / uygulama islevselligi". Supabase ve Anthropic
+  Play tanimina gore "hizmet saglayici", paylasim sayilmiyor
+- Magaza girisi: ozgun Turkce metin, 512x512 simge, 1024x500 one cikan
+  grafik (bina motifi), 7 adet 1080x1920 ekran gorseli
+- Ekran gorselleri test org'undaki temiz veriyle uretildi, gercek kirac
+  verisi ve kisisel profil fotografi KULLANILMADI
+- Yapay zeka ile uretilmis oge beyani verildi (gorseller AI ile hazirlandi)
+- URETIME ERISIM YOK: 13 Kasim 2023 sonrasi kisisel hesap kurali geregi
+  kapali test sarti uygulaniyor. Alpha kanalinda 14 tester, 14 gun
+  kesintisiz kalmali, sonra uretim erisimi basvurusu (~1 hafta inceleme)
+- Kritik: listeye mail eklemek yetmiyor, her tester kendi Android
+  telefonundan katilim linkiyle katilmali. Kurulum da yetmiyor, Nisan
+  2026'dan beri Google gercek etkilesim ariyor
+- versionCode 17 kapali testte yayinda
+
+**App Store**
+- iPad destegi KAPATILDI (supportsTablet: false). Tablet duzeni hic
+  tasarlanmadi, acik birakmak 4.0 ret riski + ayri gorsel seti demekti
+- Surum sayfasi: 7 adet 1290x2796 gorsel (duz RGB, alfa yok), aciklama,
+  anahtar kelimeler, kategori Business, yas 4+, fiyat Free, manuel yayin
+- Demo hesap: test1@gmail.com — incelemeci bu org'u kullaniyor,
+  inceleme suresince VERISINE DOKUNULMAYACAK
+- 1. GONDERIM REDDEDILDI (14 Agustos): Guideline 2.1 Information Needed.
+  Islevsel ret DEGIL, bilgi talebi. Apple 7 kalem istedi: fiziksel
+  cihazda ekran kaydi, test edilen cihaz/OS listesi, islev ve hedef
+  kitle, kurulum talimatlari, kullanilan harici servisler, bolgesel
+  farklar, duzenlemeye tabi sektor beyani
+- Cevap Resolution Center'dan gonderildi (build 3 ile birlikte)
+
+**Bu surecte bulunan ve duzeltilen gercek hatalar (build 3)**
+- HEIC: iPhone varsayilan HEIC cekiyor, kimlik-belgeleri ve dekontlar
+  bucket'lari sadece jpeg/png/webp kabul ediyordu. Fotograf arsivinden
+  kimlik ve dekont yukleme iOS'ta TAMAMEN KIRIKTI. Cozum: expo-image-
+  manipulator ile yuklemeden once JPEG'e cevirme (src/utils/imageJpeg.ts,
+  hem KimlikFoto hem OdemeTakipScreen kullaniyor). Bucket'a heic EKLENMEDI
+  cunku WebView <img> icinde HEIC gosteremiyor
+- Dekont yeniden yukleme: reddedilen dekontun yerine yenisi yuklendiginde
+  eski goruntu geliyordu. cacheControl: '0' eklendi; asil sebep muhtemelen
+  uzanti degisimiydi (.jpg -> .heic), HEIC duzeltmesiyle birlikte cozuldu
+- Turkce arama: ListeScreen'deki arama toLowerCase() kullaniyordu,
+  Turkce noktali I (U+0130) duz i'ye donusmedigi icin "nilay" yazinca
+  "NILAY CEVIK" bulunamiyordu. trNormalize yardimcisi eklendi
+- iOS izin metinleri: NSPhotoLibraryUsageDescription ve
+  NSCameraUsageDescription yoktu, Expo varsayilani (Ingilizce, genel)
+  cikiyordu. Turkce ve aciklayici metinler eklendi
+- ONEMLI DERS: Postgres ILIKE de ayni Turkce I sorununu yasiyor.
+  SQL'de kiraci_ad ilike '%nilay%' NILAY ile eslesmez
+
+**Gizlilik linkleri uygulama icinde (build 4'e girecek)**
+- ProfilScreen'deki devre disi "Gizlilik / KVKK" placeholder'i aktif
+  hale getirildi
+- DIGER bolumune "Hesap ve Veri Silme" satiri eklendi
+- SignupScreen ve ForcePasswordChangeScreen'e bilgilendirme metni
+  (onay kutusu YOK)
+
+**Siradaki isler**
+1. Apple'dan cevap bekleniyor
+2. Kapali testte 14 gunu doldurmak, testerlari dondurmek, geri bildirimleri
+   bir dosyada toplamak (uretim erisimi basvurusunda soruluyor)
+3. E-posta onayini acmak + Supabase Site URL duzeltmesi (production yol
+   haritasinin son maddesi, inceleme bitmeden YAPILMAYACAK)
+4. Play Console'da paket adi kaydi kontrolu (son tarih 30 Eylul 2026)
+5. Domain: gayrimenk.com (ertelendi)
+
+**Bilinen acik borclar**
+- Odeme plani dolduktan sonra yeni donem EKLENEMIYOR: olustur butonu
+  sadece 0 satirda cikiyor, silme ise tek dekont varsa reddediliyor.
+  Ilk sozlesmeler Agustos 2027'de bu duvara carpacak. Cozum onerisi:
+  create_payment_schedule yalnizca eksik donemler icin satir eklesin
+- Tek korumali satir sozlesmeyi kilitliyor, cikis yolu sadece SQL
+- Ayni isimde ikinci kisi kaydi olusturulabiliyor, picker ayirt etmiyor
+- Uygulamada gunluk kullanim dongusu yok. Hatirlatma bildirimleri
+  (yaklasan vade, yenilenen sozlesme) gercek cozum
+- Mapping dosyasi (R8/proguard) yuklenmiyor, Play'de cokme raporlari
+  okunaksiz
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
