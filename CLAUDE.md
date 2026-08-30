@@ -234,6 +234,96 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Mapping dosyasi (R8/proguard) yuklenmiyor, Play'de cokme raporlari
   okunaksiz
 
+### Faz 3.7 — Guvenlik denetimi + iOS canli yayin — 26 Agustos 2026
+
+**iOS APP STORE'DA CANLI**
+- Guideline 2.1 reddi asildi: 7 kalemlik cevap + 2 ekran kaydi (Drive
+  linki) Resolution Center'dan gonderildi, build 3 eklendi
+- Apple onayladi, manuel yayin secili oldugu icin "Release This Version"
+  ile yayina alindi. Durum: Ready for Distribution
+- App ID 6786396304 · apps.apple.com/tr/app/id6786396304
+- ASIMETRI: iOS herkese acik, Android hala kapali test kapisinda.
+  Duyuru yaparken bunu hesaba kat
+- Demo hesap test1@gmail.com / 123456 — sonraki incelemelerde de
+  kullanilacak, SIFRESI DEGISTIRILMEYECEK
+
+**IKINCI GUVENLIK DENETIMI (salt okunur, Claude Code + canli DB dogrulamasi)**
+
+Cekirdek saglam cikti: org izolasyonu, iki private bucket, odeme
+RPC'leri, invite-user ve delete-account Edge Function'lari temiz.
+
+KAPATILANLAR:
+- K1 (KRITIK) — Rol kendi kendine yukseltme. users_update politikasi
+  USING/WITH CHECK olarak yalnizca id = auth.uid() idi, kolon kisiti
+  yoktu. Bir kiraci PATCH ile role='emlakci' yazip tum portfoye
+  erisebiliyordu. Cozum: protect_user_privileges_trg (BEFORE UPDATE
+  trigger) — role ve organization_id degisimini reddediyor, service_role
+  muaf (davet akisi calisiyor, test edildi)
+- Y1 — payments_vade_yedek tablosu RLS KAPALI + anon'a tam DML ile
+  duruyordu (26 satir). DROP edildi. DERS: gecici tablo olusturunca
+  ayni oturumda silinmeli
+- Y2 — anthropic-proxy kimlik dogrulamasiz acik LLM proxy'siydi.
+  Fonksiyon SILINDI, eski API anahtari iptal edildi, yeni anahtar
+  uretildi. Eski anahtar EXPO_PUBLIC_ ile build'lere gomulmustu, yani
+  cikarilabilirdi. KURAL: uygulamanin okuyabildigi her anahtar
+  ACIK anahtardir
+- Y3 — Dekont WebView stored XSS. record_dekont'un mime kontrolu
+  like 'image/%' idi, image/png" onerror=... payload'i geciyordu.
+  Tam allowlist'e cevrildi (jpeg/png/webp/pdf), mevcut kayitlar temiz
+- O5 — contract_items ve contract_photos politikalari ORG bazliydi,
+  sozlesme bazli degil. Kiraci org'daki TUM sozlesmelerin esya listesini
+  ve fotograflarini okuyup degistirebiliyordu. user_can_access_contract
+  ile yeniden yazildi, yazma islemleri ayrica emlakci-only
+- O6 — approve_payment durum kontrolu yoktu. Onaylanmis odeme tekrar
+  onaylanamiyor artik. Geri alma iki role de acik birakildi (onaylayan
+  hatasini duzeltebilmeli)
+
+ACIK KALANLAR (build 4'e):
+- Y4 — Zorunlu sifre degistirme kapisi 3 yoldan atlanabiliyor
+- O1 — API'de acik kayit + mailer_autoconfirm:true. iOS canli oldugu
+  icin anon key artik herkeste; kendi org'unu acmaktan oteye gitmiyor
+  ama spam vektoru
+- O2 — pdfTemplate.ts ve MalSahibiScreen'de kacissiz kullanici metni
+- O3 — TC + base64 kimlik fotosu sifresiz lokal JSON'a dusuyor (KVKK)
+- O4 — anthropic.ts icindeki callDirectApi olu yolu hala
+  EXPO_PUBLIC_ANTHROPIC_API_KEY okuyor, silinecek
+- Odeme durumu degisikliklerinin LOG'u yok: onaylayan_user_id uzerine
+  yaziliyor, gecmis kayboluyor, kiraci fark etmiyor. Audit log gerekli
+
+**KRITIK OGRENME — AI BAGIMLILIGI**
+anthropic-proxy silinince YAYINDAKI UYGULAMADA SOZLESME OLUSTURMA
+TAMAMEN KIRILDI. Sebep: FormScreen.tsx:111 sozlesme metnini uretmek
+icin sozlesmeOlustur() cagiriyor. "AI ozelligi kullanilmiyor" sanilan
+sey yalnizca opsiyonel inceleme ozelligiydi; uretim de AI'ya bagliymis.
+Proxy gecici olarak GERI KONDU (duzeltilmis haliyle: model sunucuda
+sabit, MAX_TOKENS 4000, MAX_INPUT_CHARS 20000, prompt icerigi
+LOGLANMIYOR — eskisi sozlesmenin ilk 80 karakterini logluyordu, icinde
+isim ve TC olabiliyordu). Yeni anahtar Supabase Secrets'ta, istemciye
+inmiyor.
+
+**BUILD 4 / versionCode 18 ICERIGI**
+1. SOZLESME URETIMINDEN AI'YI KALDIR (en onemli is). prompts.ts'teki
+   SOZLESME_YAZARI_PROMPT zaten deterministik bir sablon — modele
+   verilen tek gorev {} alanlarini doldurmak. VARSAYILAN_OZEL_MADDELER
+   ve VARSAYILAN_GENEL_MADDELER zaten TS fonksiyonu, maddeleri yerel
+   uretiyorlar. Yani model burada yazar degil, pahali bir
+   arama-degistirme motoru. Yerel fonksiyona cevrilince: kesinti riski
+   yok, maliyet yok, her seferinde ayni cikti (hukuki belge icin sart)
+2. Y4, O2, O3, O4 duzeltmeleri
+3. Gizlilik linkleri (ProfilScreen + Signup + ForcePasswordChange —
+   commit'lendi, build bekliyor)
+4. Rol yanip sonme hatasi: cikis yapinca eski rol onbellekte kaliyor,
+   yeni oturumda bir an yanlis rol goruunuyor
+5. app.config.js: buildNumber '4', versionCode 18
+
+**BEKLEYEN DIGER ISLER**
+- Play kapali testi: 14 tester, 14 gun, testerlari dondurmeye devam
+- Play magaza aciklamasindan AI bolumunu cikar (ozellik geri gelene
+  kadar). Gizlilik politikasindaki Anthropic bolumu KALSIN
+- Play Console paket adi kaydi (son tarih 30 Eylul 2026)
+- Site tanitim sayfasi (Claude Design, Next.js 16 + Tailwind v4)
+- gayrimenk.com projesi: C:\Users\Lenovo\Desktop\Claude\Gayrimenk.com
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
