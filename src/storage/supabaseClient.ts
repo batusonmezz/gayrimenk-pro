@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
@@ -53,9 +54,21 @@ const ExpoSecureStoreAdapter = {
   },
 };
 
+const WebStorageAdapter = {
+  getItem: async (key: string): Promise<string | null> => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    try { localStorage.setItem(key, value); } catch {}
+  },
+  removeItem: async (key: string): Promise<void> => {
+    try { localStorage.removeItem(key); } catch {}
+  },
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage:            ExpoSecureStoreAdapter,
+    storage:            Platform.OS === 'web' ? WebStorageAdapter : ExpoSecureStoreAdapter,
     autoRefreshToken:   true,
     persistSession:     true,
     detectSessionInUrl: false,
