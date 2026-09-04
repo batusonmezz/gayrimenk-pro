@@ -58,6 +58,8 @@ export default function FormScreen({ navigation, route }: any) {
     kiraciPersonId: mevcutKiraciPersonId,
     buildingId: mevcutBuildingId,
     malSahibiPersonId: mevcutMalSahibiPersonId,
+    ozelMaddeler: mevcutOzelMaddeler,
+    genelMaddeler: mevcutGenelMaddeler,
   } = route.params;
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -112,7 +114,9 @@ export default function FormScreen({ navigation, route }: any) {
       const sozlesme = await sozlesmeOlustur(title, formData);
       navigation.navigate('Preview', {
         sozlesme, title, formData, kayitId,
-        ozelMaddeler: [], fotograflar, esyaListesi,
+        ozelMaddeler: mevcutOzelMaddeler || [],
+        genelMaddeler: mevcutGenelMaddeler || [],
+        fotograflar, esyaListesi,
         kiraciPersonId,
         buildingId: selectedBuildingId,
         malSahibiPersonId: selectedMalSahibiPersonId,
