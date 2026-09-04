@@ -152,6 +152,8 @@ export default function ListeScreen({ navigation }: any) {
                     kayitId: k.id,
                     ozelMaddeler: k.ozelMaddeler || [],
                     genelMaddeler: k.genelMaddeler || [],
+                    fotograflar: k.fotograflar || {},
+                    esyaListesi: k.esyaListesi || [],
                   })}
                 >
                   <Text style={[styles.td, { width: 80 }]}>{k.formData?.kapi_no || '-'}</Text>
