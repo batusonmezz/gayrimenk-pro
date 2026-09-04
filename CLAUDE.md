@@ -368,15 +368,18 @@ DB'de dogrulandi)
   gecirmiyordu -> kayitli sozlesme duzenlenip kaydedilince maddeler atilip
   varsayilanlar yaziliyordu. `5d24c2a`'da fotograf+esya icin duzeltilen
   hatanin maddelere ugramamis hali. **Commit 1'de duzeltildi**
-- **ACIK:** `ListeScreen.tsx:148-155` Preview'a `esyaListesi` gecirmiyor;
-  `PreviewScreen.tsx:17` `|| []`'e ceviriyor;
+- **DUZELTILDI (commit 1b, Eylul 2026):** `ListeScreen.tsx:148-155` Preview'a
+  `esyaListesi` gecirmiyor; `PreviewScreen.tsx:17` `|| []`'e ceviriyor;
   `SupabaseStorageService.ts:377` `esyaListesi !== undefined` kontrolu bos
   diziyi geciriyor ve `contract_items`'i SILIYOR. Yani esyali bir sozlesmeyi
   **Liste sekmesinden** acip PDF indirince esya listesi siliniyor. Ustteki
   `fotograflar` guard'i (satir 361) `length > 0` de kontrol ettigi icin
   korunmus. Cozum: ListeScreen `esyaListesi: k.esyaListesi || []` gecirsin.
   Guard'i `length > 0` yapmak YANLIS olur (bilerek bosaltma calismaz).
-  -> commit 1b
+  Cozum: ListeScreen'in Preview navigate'ine `fotograflar: k.fotograflar || {}`
+  ve `esyaListesi: k.esyaListesi || []` eklendi — KayitlarScreen kart tiklama
+  yoluyla ayni desen. Guard DEGISTIRILMEDI. Tarayicida dogrulandi: Liste'den
+  acilip PDF alinan esyali sozlesmenin contract_items satirlari duruyor.
 
 **COMMIT SIRASI (dal: `metin-duzeltme` — TAMAMLANDI, main'e MERGE EDILDI)**
 1. ✅ KayitlarScreen + FormScreen madde aktarimi — TAMAMLANDI + DOGRULANDI
@@ -461,6 +464,18 @@ ve (maddeleriDuzenle kalkarsa) `MADDE_DUZENLEYICI_PROMPT` de.
   `sayiYaziya` 100 ustunu desteklemiyor (satir 12 `sayi.toString()`),
   genisletilmesi gerekiyor
 - PreviewScreen "maddeleri varsayilana sifirla" aksiyonu
+- `contract_items` SIRALAMA YOK: `sozlesmeleriGetir` esyalari
+  `contract_items(*)` ile cekiyor (SupabaseStorageService satir 243), ORDER BY
+  belirtilmemis. Postgres'te siralama garanti degil ve akis her kayitta
+  sil-yeniden ekle yaptigi icin fiziksel sira da degisiyor. Sonuc: ayni
+  sozlesmenin PDF'i iki kez alininca esyalar FARKLI SIRADA listelenebilir.
+  Hukuki etkisi yok ama imzali demirbas listesinde hos degil.
+  Iki cozum: (a) migration'siz — `ad`'a gore alfabetik sirala, deterministik
+  olur ama kullanicinin girdigi sira degil; (b) DOGRUSU — `contract_items`'a
+  `sira` kolonu ekleyip girilen sirayi sakla, migration gerektirir.
+- OZELLIK: uygulamada bir sozlesmenin esya listesini SALT OKUNUR gorme yolu
+  yok. Su an ancak duzenleme formunda ya da PDF'te goruunuyor. Sozlesme
+  detayinda kayitli esyalari listeleyen bir gorunum faydali olur.
 
 ### GIT / PLAY DURUMU
 
