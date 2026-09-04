@@ -1,9 +1,52 @@
+// =============================================================================
+// anthropic-proxy — GECICI STUB (deploy: 01.09.2026)
+//
+// NE YAPAR: Anthropic'e HIC CAGRI YAPMAZ. Istemcinin bekledigi sozlesmeyi
+// ({ content: string }, 200) aynen korur, boylece YAYINDAKI iOS uygulamasinda
+// sozlesme olusturma calismaya devam eder.
+//
+// NEDEN VAR: Yayindaki build FormScreen.tsx'te sozlesmeOlustur() cagrisini
+// await ediyor ve hata alirsa Preview'a HIC gecmiyor. Fonksiyonu silmek =
+// canli uygulamada sozlesme olusturmanin kirilmasi (26 Agustos kesintisinin
+// aynisi). Modelin urettigi metin ise zaten KULLANILMIYOR: PDF ve kayit
+// pdfTemplate + VARSAYILAN_*_MADDELER'den uretiliyor, model ciktisi sadece
+// onizleme kutusunda gosteriliyordu.
+//
+// SONUC: Anthropic maliyeti sifir, kredi tukenmez, kotuye kullanimin degeri
+// yok. Oran sinirina gerek kalmadi.
+//
+// ACIK BORC — SILINECEK: build 4'te FormScreen'deki sozlesmeOlustur() cagrisi
+// kaldirilinca bu Edge Function TAMAMEN SILINECEK. CLAUDE.md'ye islendi.
+//
+// DEPLOY SONRASI: Supabase Secrets'tan ANTHROPIC_API_KEY SILINEBILIR — bu
+// surum onu okumuyor. Silmek, eski kodun kazara yeniden deploy edilmesi
+// halinde bile para harcanmasini imkansiz kilar.
+// =============================================================================
+
 import { corsHeaders } from '../_shared/cors.ts';
 
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-6';
-const MAX_TOKENS = 4000;
 const MAX_INPUT_CHARS = 20000;
+
+// Sozlesme uretimi cagrisina donen metin. Bu metin YAYINDAKI uygulamanin
+// onizleme kutusunda gorunur ve kapali testteki 14 kisi bunu okur.
+const SOZLESME_YANITI = `Sözleşme metni PDF çıktısında oluşturulmaktadır.
+
+Taraf bilgileri, kira koşulları ve özel/genel koşulların tamamını görmek için
+aşağıdaki "PDF İndir & Kaydet" butonuna dokunun. İmzalanacak belge PDF
+çıktısıdır.`;
+
+// Madde duzenleme cagrisina donen metin.
+// KRITIK: Bu yanit BILEREK gecerli JSON DEGIL.
+// anthropic.ts:104-112 once JSON.parse dener; basarisiz olunca catch dalinda
+// ORIJINAL madde dizisini geri dondurur — yani kullanicinin maddeleri korunur.
+// Buraya "[]" gibi gecerli bir JSON konursa Array.isArray(parsed) true olur,
+// BOS DIZI doner ve kayit veritabaninda BOSALIR. Bu satiri JSON yapma.
+const MADDE_YANITI =
+  'Madde duzenleme ozelligi gecici olarak devre disi. Maddeler degistirilmedi.';
+
+// Hukuk arastirma (ResearchScreen — su an hicbir navigator'a bagli degil).
+const ARASTIRMA_YANITI =
+  'Hukuki araştırma özelliği geçici olarak kullanım dışıdır.';
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -12,14 +55,6 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'Sunucu yapılandırma hatası' }), {
-      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -49,46 +84,27 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Prompt icerigi LOGLANMAZ: sozlesme metni kisisel veri iceriyor.
-  console.log(`[anthropic-proxy] istek alindi, girdi=${systemPrompt.length + userMessage.length} karakter`);
-
-  let anthropicRes: Response;
-  try {
-    anthropicRes = await fetch(ANTHROPIC_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
-    });
-  } catch (err) {
-    console.error('[anthropic-proxy] ag hatasi:', err);
-    return new Response(JSON.stringify({ error: 'AI servisine erişilemiyor' }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  // Cagri tipini systemPrompt'tan ayirt et. Tam esitlik yerine ayirt edici
+  // parca araniyor — prompt metni degisirse de calismaya devam etsin diye.
+  let content: string;
+  let tip: string;
+  if (systemPrompt.includes('madde düzenleyicisisin')) {
+    content = MADDE_YANITI;
+    tip = 'madde';
+  } else if (systemPrompt.includes('araştırmacısısın')) {
+    content = ARASTIRMA_YANITI;
+    tip = 'arastirma';
+  } else {
+    // Varsayilan: sozlesme uretimi. Taninmayan bir prompt gelirse de
+    // kullanici anlamli bir metin gorur, uygulama akisi kirilmaz.
+    content = SOZLESME_YANITI;
+    tip = 'sozlesme';
   }
 
-  if (!anthropicRes.ok) {
-    console.error(`[anthropic-proxy] anthropic ${anthropicRes.status}`);
-    return new Response(JSON.stringify({ error: 'AI servisi yanıt vermedi' }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  // Prompt icerigi LOGLANMAZ (kisisel veri iceriyor) — sadece tip ve boyut.
+  console.log(`[anthropic-proxy:STUB] tip=${tip} girdi=${systemPrompt.length + userMessage.length} karakter`);
 
-  const data = await anthropicRes.json();
-  const text = data.content?.[0]?.text ?? '';
-  console.log(`[anthropic-proxy] yanit ${text.length} karakter`);
-
-  return new Response(JSON.stringify({ content: text }), {
+  return new Response(JSON.stringify({ content }), {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });

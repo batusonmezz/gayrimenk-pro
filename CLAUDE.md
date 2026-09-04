@@ -324,6 +324,138 @@ inmiyor.
 - Site tanitim sayfasi (Claude Design, Next.js 16 + Tailwind v4)
 - gayrimenk.com projesi: C:\Users\Lenovo\Desktop\Claude\Gayrimenk.com
 
+### Faz 3.8 — AI bagimliligini kaldirma (Eylul 2026, DEVAM EDIYOR)
+
+**BULGU: AI'in urettigi metin hukuki belgeye HIC ULASMIYOR** (kodda + canli
+DB'de dogrulandi)
+- `FormScreen.tsx:114` `sozlesmeOlustur()` cagiriliyor, sonucu Preview'a
+  `sozlesme` olarak gidiyor — ama ayni cagride `ozelMaddeler: []` geciliyordu
+- `PreviewScreen` bos dizi gorunce `VARSAYILAN_OZEL_MADDELER` /
+  `VARSAYILAN_GENEL_MADDELER` uretiyor
+- PDF `generateKiraSozlesmesiHTML(formData, ozelMaddeler, genelMaddeler, ...)`
+  ile uretiliyor — **AI metni parametre bile degil**
+- `contracts.sozlesme_metni` = `JSON.stringify(ozelMaddeler)`, yani tam metin
+  DEGIL, ozel maddelerin JSON dizisi. Guvenlik denetimindeki "tam metin"
+  ifadesi yaniltici; kayitli sozlesme acilinca onizlemede ham JSON goruunuyor
+- AI metninin tek kullanimi `PreviewScreen.tsx:142`'de ekranda gosterilmek
+- **SONUC:** AI'i uretimden cikarmak bir "port" degil, bir SILME islemi.
+  Mevcut 21 sozlesmenin belgesi degismez. 26 Agustos'ta sozlesme
+  olusturmanin kirilma sebebi ciktinin kaybi degil, bloklayan cagrinin
+  hata firlatip Preview'a gecisi engellemesiydi.
+
+**BULGU: madde metinleri elle transkripsiyonda kisaltilmis**
+- Islak imzali asil sozlesme (Ozgur Civelekoglu / Hazal Uzum, 01.10.2025)
+  `VARSAYILAN_*` ile madde madde karsilastirildi
+- 8 maddede kesinti bulundu; **her fark bir kisaltma**, bir tanesi bile
+  uzama degil. Yani AI kisaltmadi — kagit form TS'e gecirilirken kirpilmis
+- En kritikleri: OZEL 3'te **depozito iade cumlesi**, GENEL 3'te maddenin
+  %85'i (adres degisikligi bildirimi + tebligat sorumlulugu), OZEL 10'da
+  dekorasyon izni, OZEL 8'de faiz + bakim bildirim yukumlulugu
+- **Tek yetkili kaynak islak imzali asil sozlesme.** Prompt da `VARSAYILAN_*`
+  da turev
+- Asil belgede IKI yazim hatasi var:
+  * OZEL 8 "kullanmadan dogan" -> DUZELTILDI ("kullanilmasindan")
+  * OZEL 14 "kiraciya mal sahibine aittir" -> **ASILDAKI GIBI BIRAKILDI.**
+    Iki taraf da yaziyor; hangisinin gecerli oldugu sozlesme uzerinde elle
+    isaretlenecek. Bu bir yazim hatasi DEGIL, matbu form mantigi
+- GENEL 4 (kefil maddesi) kosullu YAPILMADI: asil matbu formda kefil
+  imzalanmamis olsa bile madde duruyor
+- **21 imzali sozlesme yeniden BASILMAYACAK.** Duzeltme yalnizca bundan
+  sonraki sozlesmeler icin
+
+**VERI KAYBI HATALARI (ayni aile)**
+- `KayitlarScreen.tsx` duzenle navigate'i `ozelMaddeler`/`genelMaddeler`
+  gecirmiyordu -> kayitli sozlesme duzenlenip kaydedilince maddeler atilip
+  varsayilanlar yaziliyordu. `5d24c2a`'da fotograf+esya icin duzeltilen
+  hatanin maddelere ugramamis hali. **Commit 1'de duzeltildi**
+- **ACIK:** `ListeScreen.tsx:148-155` Preview'a `esyaListesi` gecirmiyor;
+  `PreviewScreen.tsx:17` `|| []`'e ceviriyor;
+  `SupabaseStorageService.ts:377` `esyaListesi !== undefined` kontrolu bos
+  diziyi geciriyor ve `contract_items`'i SILIYOR. Yani esyali bir sozlesmeyi
+  **Liste sekmesinden** acip PDF indirince esya listesi siliniyor. Ustteki
+  `fotograflar` guard'i (satir 361) `length > 0` de kontrol ettigi icin
+  korunmus. Cozum: ListeScreen `esyaListesi: k.esyaListesi || []` gecirsin.
+  Guard'i `length > 0` yapmak YANLIS olur (bilerek bosaltma calismaz).
+  -> commit 1b
+
+**COMMIT SIRASI (dal: `metin-duzeltme`)**
+1. KayitlarScreen + FormScreen madde aktarimi — kod tamam, CIHAZ TESTI BEKLIYOR
+2. `maddeler-duzeltilmis.txt` -> `prompts.ts` (duzeltilmis madde metinleri)
+3. `{sayfa_sayisi}` placeholder + `pdfTemplate.ts` geriye uyumlu dal
+   (`if (i === 6)` indeks bagimliligi kaldiriliyor; eski 21 kaydin ciktisi
+   ayni kalsin diye ikinci dal)
+4. AI temizligi: `sozlesmeOlustur` cagrisini sil, `maddeleriDuzenle` girisini
+   kapat, O4 (`callDirectApi` + `EXPO_PUBLIC_ANTHROPIC_API_KEY`) temizligi
+
+**KURAL: commit 1 cihazda dogrulanmadan commit 2 iceren HICBIR BUILD
+kurulmayacak.** Aksi halde imzalanmis 21 sozlesmeden biri duzenlendiginde
+maddeleri yeni metinle degisir.
+
+**Commit 1 cihaz testi (ayirt edici olmali):** 21 sozlesmenin maddeleri zaten
+varsayilanla ayni oldugu icin "korundu" ile "yeniden uretildi" ayirt edilemez.
+Test org'unda bir sozlesmenin `ozel_maddeler` hucresine belirgin bir isaret
+konup (orn. ` XXTESTXX`) duzenle+kaydet sonrasi isaretin durup durmadigina
+bakilacak.
+
+**Commit 1 yan etkisi (beklenen):** duzenlemede maddeler artik yeniden
+uretilmiyor. Sozlesme kaydedildikten sonra "Esyali" isaretlenirse esya
+maddeleri EKLENMEZ. Imzali metni korumak icin kabul edilen takas.
+Kalici cozum: PreviewScreen'e "maddeleri varsayilana sifirla" aksiyonu.
+-> acik borc
+
+**GUVENLIK: O1 — acik kayit kapatildi (Eylul 2026)**
+- Supabase > **"Allow new users to sign up"** kapatildi (`DISABLE_SIGNUP`)
+- **"Enable email signup" toggle'ina ASLA DOKUNMA:** o `EXTERNAL_EMAIL_ENABLED`
+  ve kapatilirsa MEVCUT kullanicilarin e-posta+sifre GIRISI de kirilir
+  (`token?grant_type=password` 400). iOS canli — herkes kilitlenir, 14 tester
+  giremez, demo hesap test1@gmail.com calismaz
+- Davet akisi etkilenmez — mekanizma tahmin edilenden farkli cikti:
+  `invite-user` Edge Function `admin.auth.admin.createUser` kullaniyor
+  (service_role, `email_confirm: true`), 16 haneli rastgele bir sifre uretip
+  emlakcinin ekranina donduruyor ve `must_change_password: true` yaziyor —
+  **E-POSTA HIC GONDERMIYOR.** Admin API oldugu icin signup ve e-posta onayi
+  ayarlarindan etkilenmiyor. `handle_new_user()` de bir DB trigger'i
+  (`AFTER INSERT ON auth.users`), satiri hangi endpoint yarattigina bakmaz.
+  CIHAZDA DOGRULANDI (Eylul 2026): toggle kapaliyken davet calisti
+- Y4 BAGLANTISI: davet sifresi emlakcinin ekraninda goruunuyor. Zorunlu sifre
+  degistirme kapisi atlanabiliyorsa (Y4) emlakci kiracinin sifresini kalici
+  olarak biliyor demektir. Y4'un onemi bu
+- Giris testi yapilirken ONCE CIKIS yapilmali: acik oturum refresh token'la
+  devam ettigi icin girisin calistigini KANITLAMAZ
+- `mailer_autoconfirm`'e DOKUNULMADI: autoconfirm yalnizca signup yolunda
+  anlamli, signup kapaninca saldiri yuzeyi kalmiyor. E-posta onayini acma isi
+  Site URL duzeltmesiyle birlikte Faz 6'da
+
+**anthropic-proxy STUB (gecici, Eylul 2026)**
+- Proxy `verify_jwt: false` ve istemci ANON KEY gonderiyor (`anthropic.ts:39`).
+  Anon key iOS ile birlikte herkeste -> proxy'ye vurmak icin hesap acmaya bile
+  gerek yok. `verify_jwt` acmak koruma saglamaz, anon key zaten gecerli JWT
+- Proxy'yi KAPATMAK cozum degil: yayindaki build sozlesme uretiminde onu
+  cagiriyor, kapatmak canli uygulamayi yine kirardi. Build 4 onaylanip
+  yayilana kadar (haftalar) bu boyle
+- **COZUM:** Anthropic'e hic cagri yapmayan stub deploy edildi. Ayni sozlesme
+  (`{content}`, 200), maliyet sifir, kotuye kullanimin degeri yok.
+  Oran sinirina gerek kalmadi
+- Stub `systemPrompt`'tan cagri tipini ayirt ediyor. Madde duzenleme yanitina
+  **BILEREK gecersiz JSON** donuyor: `anthropic.ts:104-112` parse edemeyip
+  `catch` dalinda ORIJINAL diziyi koruyor. Buraya `"[]"` konursa
+  `Array.isArray` true olur, BOS DIZI doner ve kayit veritabaninda bosalir
+- Deploy sonrasi Supabase Secrets'tan `ANTHROPIC_API_KEY` SILINEBILIR —
+  stub okumuyor
+- Kabul edilen kozmetik kusur: sohbet kutusu yine "✓ guncellendi" diyor ama
+  maddeler degismiyor. Build 4'te o giris zaten kapaniyor
+
+**ACIK BORC — anthropic-proxy SILINECEK:** build 4'te `sozlesmeOlustur()`
+cagrisi kaldirilinca Edge Function tamamen silinecek, `SOZLESME_YAZARI_PROMPT`
+ve (maddeleriDuzenle kalkarsa) `MADDE_DUZENLEYICI_PROMPT` de.
+
+**KAPSAM DISI (build 4'e girmeyecek)**
+- `pdfTemplate.ts:155-156` — asil belgede tutarlar hem rakam hem yaziyla
+  ("25.000 TL (YIRMI BES BIN TURK LIRASI)"), uygulama sadece rakam basiyor.
+  `sayiYaziya` 100 ustunu desteklemiyor (satir 12 `sayi.toString()`),
+  genisletilmesi gerekiyor
+- PreviewScreen "maddeleri varsayilana sifirla" aksiyonu
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
@@ -472,7 +604,9 @@ B4.5. ✅ Storage cleanup + production — upload_dekont(uuid,text,text) drop (0
 - **Email onayı:** Şu an KAPALI (Supabase Auth settings). Production'da açılacak.
   Trigger zaten `needsEmailConfirmation` durumunu handle ediyor — sorun olmayacak.
 - **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
-- **AI:** Claude Sonnet 4.6 via Supabase Edge Function proxy (+ direct fallback)
+- **AI:** anthropic-proxy STUB durumda (Eylul 2026) — Anthropic'e cagri
+  YAPILMIYOR, sabit metin donuyor. Build 4'te fonksiyon tamamen silinecek.
+  Detay: Faz 3.8.
 - **Migrations sırası:** 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 (hepsi Supabase'de çalıştırıldı)
 
 ---
