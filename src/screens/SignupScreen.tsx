@@ -8,6 +8,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { signUp } from '../services/auth';
@@ -119,6 +120,17 @@ export default function SignupScreen({ navigation }: Props) {
         {info  ? <Text style={styles.info}>{info}</Text>   : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
+        <Text style={styles.privacyNote}>
+          Kaydolarak{' '}
+          <Text
+            style={styles.privacyLink}
+            onPress={() => Linking.openURL('https://batusonmezz.github.io/gayrimenkpro-legal/')}
+          >
+            Gizlilik Politikası ve KVKK Aydınlatma Metni
+          </Text>
+          {"'"}ni kabul etmiş olursunuz.
+        </Text>
+
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleKayit}
@@ -211,6 +223,17 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boole
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 12,
+  },
+  privacyNote: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 19,
+  },
+  privacyLink: {
+    color: colors.primaryAccent,
+    fontWeight: '500',
   },
   button: {
     backgroundColor: isDark ? colors.primaryAccent : colors.primary,

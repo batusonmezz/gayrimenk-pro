@@ -9,6 +9,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -136,6 +137,17 @@ export default function ForcePasswordChangeScreen() {
           return null;
         })()}
 
+        <Text style={styles.privacyNote}>
+          Devam ederek{' '}
+          <Text
+            style={styles.privacyLink}
+            onPress={() => Linking.openURL('https://batusonmezz.github.io/gayrimenkpro-legal/')}
+          >
+            Gizlilik Politikası ve KVKK Aydınlatma Metni
+          </Text>
+          {"'"}ni kabul etmiş olursunuz.
+        </Text>
+
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleKaydet}
@@ -216,6 +228,17 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boole
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 12,
+  },
+  privacyNote: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 19,
+  },
+  privacyLink: {
+    color: colors.primaryAccent,
+    fontWeight: '500',
   },
   passwordRow: {
     flexDirection: 'row',

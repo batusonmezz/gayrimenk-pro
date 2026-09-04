@@ -206,15 +206,29 @@ export default function ProfilScreen() {
             <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
           </TouchableOpacity>
           <View style={styles.rowDivider} />
-          <View style={styles.row}>
-            <Ionicons name="document-text-outline" size={20} color={colors.textFaint} style={styles.rowIcon} />
-            <Text style={[styles.rowLabel, styles.dimmed]}>Gizlilik / KVKK</Text>
-            <View style={styles.soonBadge}><Text style={styles.soonText}>Yakında</Text></View>
-          </View>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => Linking.openURL('https://batusonmezz.github.io/gayrimenkpro-legal/')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="document-text-outline" size={20} color={colors.primaryAccent} style={styles.rowIcon} />
+            <Text style={styles.rowLabel}>Gizlilik / KVKK</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionLabel}>DİĞER</Text>
         <View style={styles.settingsCard}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => Linking.openURL('https://batusonmezz.github.io/gayrimenkpro-legal/hesap-silme.html')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primaryAccent} style={styles.rowIcon} />
+            <Text style={styles.rowLabel}>Hesap ve Veri Silme</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+          </TouchableOpacity>
+          <View style={styles.rowDivider} />
           <TouchableOpacity
             style={styles.row}
             onPress={() => setSilModalAcik(true)}
