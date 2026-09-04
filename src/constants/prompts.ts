@@ -200,11 +200,7 @@ export const VARSAYILAN_GENEL_MADDELER = (esyaVar: boolean = false, data?: Recor
     // 6 — DEGISMEDI
     "Taraflar işbu kira sözleşmesinden kaynaklanacak ihtilaflar halinde {yetkili_mahkeme} İcra Dairesi ve Mahkemelerinin yetkili olacağını kabul etmişlerdir.",
 
-    // 7 — COMMIT 2'DE DEGISMEDI. Metin asilla zaten birebir.
-    // COMMIT 3'te asagidaki satirin yerine su gelecek (pdfTemplate ile AYNI
-    // COMMIT'te, tek basina degil):
-    //   "İşbu kira sözleşmesi 2 (iki) nüsha ve {sayfa_sayisi} sayfa olarak, taraflarca okunarak serbest iradeleri ile kabul ve taahhüt edilerek imza altına alınmıştır.",
-    "İşbu kira sözleşmesi 2 (iki) nüsha olarak, taraflarca okunarak serbest iradeleri ile kabul ve taahhüt edilerek imza altına alınmıştır.",
+    "İşbu kira sözleşmesi 2 (iki) nüsha ve {sayfa_sayisi} sayfa olarak, taraflarca okunarak serbest iradeleri ile kabul ve taahhüt edilerek imza altına alınmıştır.",
   ];
 
   // --- Asagisi DEGISMEDI: asil belgede yok, uygulamaya sonradan eklenen dallar ---

@@ -175,8 +175,13 @@ ${tbAc}
 <div class="section-title">GENEL KOŞULLAR</div>
 ${(genelMaddeler && genelMaddeler.length > 0 ? genelMaddeler : VARSAYILAN_GENEL_MADDELER(esyaVar, data))
   .map((madde, i) => {
+    const sayfaIfade = `${toplamSayfa} (${toplamSayfaYazi})`;
     let metin = madde.replace('{yetkili_mahkeme}', `<b>${data.yetkili_mahkeme || '............'}</b>`);
-    if (i === 6) metin = `İşbu kira sözleşmesi 2 (iki) nüsha ve ${toplamSayfa} (${toplamSayfaYazi}) sayfa olarak, taraflarca okunarak serbest iradeleri ile kabul ve taahhüt edilerek imza altına alınmıştır.`;
+    if (metin.includes('{sayfa_sayisi}')) {
+      metin = metin.replace('{sayfa_sayisi}', sayfaIfade);
+    } else if (metin.startsWith('İşbu kira sözleşmesi 2 (iki) nüsha')) {
+      metin = metin.replace('2 (iki) nüsha olarak', `2 (iki) nüsha ve ${sayfaIfade} sayfa olarak`);
+    }
     return `<div class="madde"><b>${i + 1}-</b> ${metin}</div>`;
   }).join('\n')}
 <p style="text-align:center;font-size:8pt;margin-top:16px;color:#555">Gayrimenk.com tarafından hazırlanmıştır.</p>
