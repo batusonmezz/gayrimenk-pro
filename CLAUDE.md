@@ -378,30 +378,36 @@ DB'de dogrulandi)
   Guard'i `length > 0` yapmak YANLIS olur (bilerek bosaltma calismaz).
   -> commit 1b
 
-**COMMIT SIRASI (dal: `metin-duzeltme`)**
-1. KayitlarScreen + FormScreen madde aktarimi — kod tamam, CIHAZ TESTI BEKLIYOR
-2. `maddeler-duzeltilmis.txt` -> `prompts.ts` (duzeltilmis madde metinleri)
-3. `{sayfa_sayisi}` placeholder + `pdfTemplate.ts` geriye uyumlu dal
-   (`if (i === 6)` indeks bagimliligi kaldiriliyor; eski 21 kaydin ciktisi
-   ayni kalsin diye ikinci dal)
-4. AI temizligi: `sozlesmeOlustur` cagrisini sil, `maddeleriDuzenle` girisini
-   kapat, O4 (`callDirectApi` + `EXPO_PUBLIC_ANTHROPIC_API_KEY`) temizligi
+**COMMIT SIRASI (dal: `metin-duzeltme` — TAMAMLANDI, main'e MERGE EDILDI)**
+1. ✅ KayitlarScreen + FormScreen madde aktarimi — TAMAMLANDI + DOGRULANDI
+2. ✅ `maddeler-duzeltilmis.txt` -> `prompts.ts` (duzeltilmis madde metinleri) — TAMAMLANDI
+3. ✅ `{sayfa_sayisi}` placeholder + `pdfTemplate.ts` geriye uyumlu dal — TAMAMLANDI
+   (`if (i === 6)` indeks bagimliligi kaldirildi; eski 21 kaydin ciktisi ayni kaliyor)
+4. KALAN — AI temizligi: `sozlesmeOlustur` cagrisini sil, `maddeleriDuzenle`
+   girisini kapat, O4 (`callDirectApi` + `EXPO_PUBLIC_ANTHROPIC_API_KEY`) temizligi
 
-**KURAL: commit 1 cihazda dogrulanmadan commit 2 iceren HICBIR BUILD
-kurulmayacak.** Aksi halde imzalanmis 21 sozlesmeden biri duzenlendiginde
-maddeleri yeni metinle degisir.
+**KURAL (SAGLANDI): commit 1 cihazda dogrulanmadan commit 2 iceren HICBIR
+BUILD kurulmayacakti.** Commit 1, commit 2'den ONCE dogrulandi (asagidaki
+test), kural ihlal edilmeden ilerlendi.
 
-**Commit 1 cihaz testi (ayirt edici olmali):** 21 sozlesmenin maddeleri zaten
-varsayilanla ayni oldugu icin "korundu" ile "yeniden uretildi" ayirt edilemez.
-Test org'unda bir sozlesmenin `ozel_maddeler` hucresine belirgin bir isaret
-konup (orn. ` XXTESTXX`) duzenle+kaydet sonrasi isaretin durup durmadigina
-bakilacak.
+**Commit 1 DOGRULAMA — TAMAMLANDI:** uc yontemle dogrulandi:
+(a) test org'undaki bir sozlesmenin `ozel_maddeler` hucresine ` XXTESTXX`
+    isareti konup, bunun main'de kayboldugu ama `metin-duzeltme` dalinda
+    kaldigi goruldu
+(b) yeni olusturulan sozlesme duzeltilmis uzun metinle cikti
+(c) 24 Agustos tarihli eski bir sozlesme kendi kisa (eski) metnini korudu
 
-**Commit 1 yan etkisi (beklenen):** duzenlemede maddeler artik yeniden
-uretilmiyor. Sozlesme kaydedildikten sonra "Esyali" isaretlenirse esya
+**Commit 1 yan etkisi (beklenen, hala gecerli):** duzenlemede maddeler artik
+yeniden uretilmiyor. Sozlesme kaydedildikten sonra "Esyali" isaretlenirse esya
 maddeleri EKLENMEZ. Imzali metni korumak icin kabul edilen takas.
 Kalici cozum: PreviewScreen'e "maddeleri varsayilana sifirla" aksiyonu.
 -> acik borc
+
+**YENI — cihazsiz test artik mumkun (Eylul 2026):** `supabaseClient.ts`
+icine `Platform.OS === 'web'` icin localStorage tabanli bir adaptor eklendi
+(expo-secure-store'un web karsiligi yok, oncesinde web'de acilmiyordu).
+`npx expo start --web` ile tarayicida test edilebiliyor. iOS/Android
+SecureStore yolu DEGISMEDI.
 
 **GUVENLIK: O1 — acik kayit kapatildi (Eylul 2026)**
 - Supabase > **"Allow new users to sign up"** kapatildi (`DISABLE_SIGNUP`)
