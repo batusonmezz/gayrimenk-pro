@@ -280,13 +280,18 @@ KAPATILANLAR:
 
 ACIK KALANLAR (build 4'e):
 - Y4 — Zorunlu sifre degistirme kapisi 3 yoldan atlanabiliyor
-- O1 — API'de acik kayit + mailer_autoconfirm:true. iOS canli oldugu
-  icin anon key artik herkeste; kendi org'unu acmaktan oteye gitmiyor
-  ama spam vektoru
+- O1 — ✅ KAPANDI (Eylul 2026). API'de acik kayit vardi; iOS canli oldugu
+  icin anon key herkeste ve isteyen hesap acip proxy'ye vurabiliyordu.
+  Supabase'de "Allow new users to sign up" kapatildi. mailer_autoconfirm'e
+  DOKUNULMADI: autoconfirm yalnizca signup yolunda anlamli, signup kapaninca
+  saldiri yuzeyi kalmadi. Davet akisi etkilenmedi (admin.createUser ayri yol,
+  cihazda dogrulandi).
 - O2 — pdfTemplate.ts ve MalSahibiScreen'de kacissiz kullanici metni
 - O3 — TC + base64 kimlik fotosu sifresiz lokal JSON'a dusuyor (KVKK)
-- O4 — anthropic.ts icindeki callDirectApi olu yolu hala
-  EXPO_PUBLIC_ANTHROPIC_API_KEY okuyor, silinecek
+- O4 — ✅ KAPANDI (Eylul 2026). anthropic.ts'teki callDirectApi olu yolu
+  EXPO_PUBLIC_ANTHROPIC_API_KEY okuyordu. callDirectApi, DIRECT_API_KEY,
+  DIRECT_API_URL, USE_REMOTE_AI ve fallback dallanmasi silindi; callClaude
+  fallback'siz tek yola indi. Istemci kodunda anahtari okuyan satir kalmadi.
 - Odeme durumu degisikliklerinin LOG'u yok: onaylayan_user_id uzerine
   yaziliyor, gecmis kayboluyor, kiraci fark etmiyor. Audit log gerekli
 
@@ -386,8 +391,23 @@ DB'de dogrulandi)
 2. ✅ `maddeler-duzeltilmis.txt` -> `prompts.ts` (duzeltilmis madde metinleri) — TAMAMLANDI
 3. ✅ `{sayfa_sayisi}` placeholder + `pdfTemplate.ts` geriye uyumlu dal — TAMAMLANDI
    (`if (i === 6)` indeks bagimliligi kaldirildi; eski 21 kaydin ciktisi ayni kaliyor)
-4. KALAN — AI temizligi: `sozlesmeOlustur` cagrisini sil, `maddeleriDuzenle`
-   girisini kapat, O4 (`callDirectApi` + `EXPO_PUBLIC_ANTHROPIC_API_KEY`) temizligi
+4. ✅ AI temizligi — TAMAMLANDI (Eylul 2026), uc commit:
+   - 4a: yeni `src/services/sozlesmeMetni.ts` — onizleme artik PDF ile AYNI
+     girdilerden (formData + ozelMaddeler + genelMaddeler + fotograflar +
+     esyaListesi) uretiliyor. FormScreen'deki `sozlesmeOlustur` cagrisi
+     kaldirildi, `sozlesme` parametresi uc navigate'ten cikarildi.
+     Dort sorun birden kapandi: stub metninin gorunmesi, kayitli sozlesme
+     acilinca ham JSON goruunmesi, madde duzenlenince onizlemenin
+     guncellenmemesi, ve onizleme ile PDF'in farkli metin gostermesi.
+   - 4b: `AI_MADDE_DUZENLEME=false` bayragi — PreviewScreen sohbet kutusu
+     gizlendi. Kod duruyor. Acmadan once SART: model yalnizca degisen
+     maddeleri dondursun ya da uygulanmadan once diff gosterilsin.
+   - 4c: O4 KAPANDI. `callDirectApi`, `DIRECT_API_KEY`, `DIRECT_API_URL`,
+     `sozlesmeOlustur`, `sozlesmeDuzenle`, `USE_REMOTE_AI` ve
+     `SOZLESME_YAZARI_PROMPT` silindi; `callClaude` fallback'siz tek yola
+     indi. Istemci kodunda EXPO_PUBLIC_ANTHROPIC_API_KEY'i okuyan satir YOK.
+     Uygulamada erisilebilir AI cagrisi da yok (maddeleriDuzenle bayrak
+     kapali, hukukArastir ekrani navigasyona bagli degil).
 
 **KURAL (SAGLANDI): commit 1 cihazda dogrulanmadan commit 2 iceren HICBIR
 BUILD kurulmayacakti.** Commit 1, commit 2'den ONCE dogrulandi (asagidaki
@@ -457,6 +477,12 @@ SecureStore yolu DEGISMEDI.
 **ACIK BORC — anthropic-proxy SILINECEK:** build 4'te `sozlesmeOlustur()`
 cagrisi kaldirilinca Edge Function tamamen silinecek, `SOZLESME_YAZARI_PROMPT`
 ve (maddeleriDuzenle kalkarsa) `MADDE_DUZENLEYICI_PROMPT` de.
+
+DIKKAT — HENUZ SILINEMEZ: istemci kodu artik cagirmiyor ama YAYINDAKI
+iOS build'i hala `sozlesmeOlustur`'u cagiriyor. Fonksiyon silinirse o
+build'de sozlesme olusturma yine kirilir. Stub sayesinde maliyet sifir
+oldugu icin acele yok; silme, build 4 onaylanip kullanicilara YAYILDIKTAN
+sonra yapilacak.
 
 **KAPSAM DISI (build 4'e girmeyecek)**
 - `pdfTemplate.ts:155-156` — asil belgede tutarlar hem rakam hem yaziyla
