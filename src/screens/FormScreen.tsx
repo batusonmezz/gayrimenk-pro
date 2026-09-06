@@ -107,25 +107,16 @@ export default function FormScreen({ navigation, route }: any) {
     []
   );
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    try {
-      const { sozlesmeOlustur } = await import('../services/anthropic');
-      const sozlesme = await sozlesmeOlustur(title, formData);
-      navigation.navigate('Preview', {
-        sozlesme, title, formData, kayitId,
-        ozelMaddeler: mevcutOzelMaddeler || [],
-        genelMaddeler: mevcutGenelMaddeler || [],
-        fotograflar, esyaListesi,
-        kiraciPersonId,
-        buildingId: selectedBuildingId,
-        malSahibiPersonId: selectedMalSahibiPersonId,
-      });
-    } catch (e: any) {
-      alert('Hata: ' + (e?.message || JSON.stringify(e)));
-    } finally {
-      setLoading(false);
-    }
+  const handleGenerate = () => {
+    navigation.navigate('Preview', {
+      title, formData, kayitId,
+      ozelMaddeler: mevcutOzelMaddeler || [],
+      genelMaddeler: mevcutGenelMaddeler || [],
+      fotograflar, esyaListesi,
+      kiraciPersonId,
+      buildingId: selectedBuildingId,
+      malSahibiPersonId: selectedMalSahibiPersonId,
+    });
   };
 
   const handleSitePickerAc = async () => {

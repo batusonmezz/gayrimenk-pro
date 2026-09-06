@@ -146,7 +146,6 @@ export default function ListeScreen({ navigation }: any) {
                   key={k.id}
                   style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
                   onPress={() => navigation.navigate('Preview', {
-                    sozlesme: k.sozlesmeMetni,
                     title: k.tur,
                     formData: k.formData,
                     kayitId: k.id,

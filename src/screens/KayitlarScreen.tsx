@@ -125,7 +125,6 @@ export default function KayitlarScreen({ navigation }: any) {
               key={kayit.id}
               style={styles.card}
               onPress={() => navigation.navigate('Preview', {
-                sozlesme: kayit.sozlesmeMetni,
                 title: kayit.tur,
                 formData: kayit.formData,
                 kayitId: kayit.id,

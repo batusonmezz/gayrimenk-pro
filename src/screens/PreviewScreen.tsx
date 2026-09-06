@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { sozlesmeKaydet, sozlesmeGuncelle } from '../services/storage';
 import { VARSAYILAN_OZEL_MADDELER, VARSAYILAN_GENEL_MADDELER } from '../constants/prompts';
+import { sozlesmeMetniUret } from '../services/sozlesmeMetni';
 import { useTheme } from '../theme';
 
 export default function PreviewScreen({ navigation, route }: any) {
-  const { sozlesme, title, formData, kayitId } = route.params;
+  const { title, formData, kayitId } = route.params;
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const styles = makeStyles(colors, isDark);
@@ -19,7 +20,6 @@ export default function PreviewScreen({ navigation, route }: any) {
   const buildingId: string | null = route.params?.buildingId ?? null;
   const malSahibiPersonId: string | null = route.params?.malSahibiPersonId ?? null;
   const esyaVar = formData?.simdiki_durum === 'Eşyalı' && esyaListesi.length > 0;
-  const [currentSozlesme, setCurrentSozlesme] = useState(sozlesme);
   const [ozelMaddeler, setOzelMaddeler] = useState<string[]>(
     route.params?.ozelMaddeler?.length > 0
       ? route.params.ozelMaddeler
@@ -29,6 +29,10 @@ export default function PreviewScreen({ navigation, route }: any) {
     route.params?.genelMaddeler?.length > 0
       ? route.params.genelMaddeler
       : VARSAYILAN_GENEL_MADDELER(esyaVar, formData)
+  );
+  const sozlesmeMetni = useMemo(
+    () => sozlesmeMetniUret(formData, ozelMaddeler, genelMaddeler, fotograflar, esyaListesi),
+    [formData, ozelMaddeler, genelMaddeler, fotograflar, esyaListesi]
   );
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState([{ role: 'ai', text: 'Sözleşmeyi inceledim. "özel koşullar" veya "genel koşullar" belirterek değişiklik yapabilirsiniz.' }]);
@@ -139,7 +143,7 @@ export default function PreviewScreen({ navigation, route }: any) {
       <ScrollView style={styles.content} scrollEnabled={true} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
         <View style={styles.contractBox}>
           <Text style={styles.contractBrand}>GAYRİMENK.COM</Text>
-          <Text style={styles.contractText}>{currentSozlesme}</Text>
+          <Text style={styles.contractText}>{sozlesmeMetni}</Text>
         </View>
         <View style={styles.chatBox}>
           <Text style={styles.chatLabel}>SÖZLEŞMEYI DÜZENLE</Text>
