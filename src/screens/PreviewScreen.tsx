@@ -6,6 +6,7 @@ import * as Sharing from 'expo-sharing';
 import { sozlesmeKaydet, sozlesmeGuncelle } from '../services/storage';
 import { VARSAYILAN_OZEL_MADDELER, VARSAYILAN_GENEL_MADDELER } from '../constants/prompts';
 import { sozlesmeMetniUret } from '../services/sozlesmeMetni';
+import { AI_MADDE_DUZENLEME } from '../config/features';
 import { useTheme } from '../theme';
 
 export default function PreviewScreen({ navigation, route }: any) {
@@ -145,30 +146,32 @@ export default function PreviewScreen({ navigation, route }: any) {
           <Text style={styles.contractBrand}>GAYRİMENK.COM</Text>
           <Text style={styles.contractText}>{sozlesmeMetni}</Text>
         </View>
-        <View style={styles.chatBox}>
-          <Text style={styles.chatLabel}>SÖZLEŞMEYI DÜZENLE</Text>
-          <View style={styles.chatMessages}>
-            {messages.map((msg, i) => (
-              <View key={i} style={[styles.chatMsg, msg.role === 'user' ? styles.userMsg : styles.aiMsg]}>
-                <Text style={[styles.chatMsgText, msg.role === 'user' && { color: colors.textOnPrimary }]}>{msg.text}</Text>
-              </View>
-            ))}
-            {loading && <ActivityIndicator style={{ margin: 8 }} color={isDark ? colors.primaryAccent : colors.primary} />}
+        {AI_MADDE_DUZENLEME && (
+          <View style={styles.chatBox}>
+            <Text style={styles.chatLabel}>SÖZLEŞMEYI DÜZENLE</Text>
+            <View style={styles.chatMessages}>
+              {messages.map((msg, i) => (
+                <View key={i} style={[styles.chatMsg, msg.role === 'user' ? styles.userMsg : styles.aiMsg]}>
+                  <Text style={[styles.chatMsgText, msg.role === 'user' && { color: colors.textOnPrimary }]}>{msg.text}</Text>
+                </View>
+              ))}
+              {loading && <ActivityIndicator style={{ margin: 8 }} color={isDark ? colors.primaryAccent : colors.primary} />}
+            </View>
+            <View style={styles.chatInputRow}>
+              <TextInput
+                style={styles.chatInput}
+                placeholder="Örn: 3. maddeyi değiştir..."
+                placeholderTextColor={colors.placeholder}
+                value={chatInput}
+                onChangeText={setChatInput}
+                onSubmitEditing={sendChat}
+              />
+              <TouchableOpacity style={styles.sendBtn} onPress={sendChat}>
+                <Text style={styles.sendText}>↑</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.chatInputRow}>
-            <TextInput
-              style={styles.chatInput}
-              placeholder="Örn: 3. maddeyi değiştir..."
-              placeholderTextColor={colors.placeholder}
-              value={chatInput}
-              onChangeText={setChatInput}
-              onSubmitEditing={sendChat}
-            />
-            <TouchableOpacity style={styles.sendBtn} onPress={sendChat}>
-              <Text style={styles.sendText}>↑</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        )}
         <View style={[styles.actionRow, { paddingBottom: insets.bottom + 8 }]}>
           <TouchableOpacity style={styles.actionBtn} onPress={handlePDF}>
             <Text style={styles.actionText}>📄 PDF İndir & Kaydet</Text>
