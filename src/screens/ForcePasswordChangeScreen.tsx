@@ -39,9 +39,6 @@ export default function ForcePasswordChangeScreen() {
     setLoading(true);
     setHata('');
     try {
-      const { error: rpcErr } = await supabase.rpc('clear_must_change_password');
-      if (rpcErr) throw new Error('Şifre sıfırlanamadı. Lütfen tekrar deneyin.');
-
       const { error: authErr } = await supabase.auth.updateUser({ password: yeniSifre });
       if (authErr) throw new Error(authErr.message);
       setLoading(false);

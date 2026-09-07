@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
-import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ActivityIndicator, Image, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -165,18 +165,32 @@ const screenOptions = {
   cardStyle: { flex: 1, overflow: 'auto' as any },
 };
 
+const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
+  Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+
 function AppInner() {
   const { colors, isDark } = useTheme();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mustChangePassword, setMustChangePasswordState] = useState(false);
+  const [mustChangePassword, setMustChangePasswordState] = useState<boolean | null>(null);
+  const [authHatasi, setAuthHatasi] = useState(false);
   const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
+
+  const kullaniciBilgisiYukle = useCallback(async () => {
+    setAuthHatasi(false);
+    try {
+      const user = await withTimeout(auth.getCurrentUser());
+      setOrganizationId(user?.organizationId ?? null);
+      setRole(user?.role ?? null);
+      setMustChangePasswordState(user?.mustChangePassword ?? false);
+    } catch {
+      console.warn('[App] getCurrentUser hatasi - kapi kapali tutuluyor');
+      setAuthHatasi(true); // mustChangePassword null KALIR
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
-
-    const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
-      Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 
     const bootstrap = async () => {
       try {
@@ -184,15 +198,7 @@ function AppInner() {
         if (!mounted) return;
         setSession(session);
         if (session) {
-          try {
-            const user = await withTimeout(auth.getCurrentUser());
-            if (!mounted) return;
-            setOrganizationId(user?.organizationId ?? null);
-            setRole(user?.role ?? null);
-            setMustChangePasswordState(user?.mustChangePassword ?? false);
-          } catch {
-            console.warn('[App] bootstrap getCurrentUser hatasi - oturum korunuyor');
-          }
+          await kullaniciBilgisiYukle();
         }
       } catch {
         if (!mounted) return;
@@ -212,37 +218,49 @@ function AppInner() {
         if (mounted) setLoading(false);
         return;
       }
-      try {
-        if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
-          const user = await withTimeout(auth.getCurrentUser());
-          if (!mounted) return;
-          setOrganizationId(user?.organizationId ?? null);
-          setRole(user?.role ?? null);
-          setMustChangePasswordState(user?.mustChangePassword ?? false);
-        } else if (event === 'SIGNED_OUT') {
-          setPasswordRecoveryMode(false);
-          setOrganizationId(null);
-          setMustChangePasswordState(false);
-          setMustChangePassword(false);
-        }
-      } catch {
-        console.warn('[App] onAuthStateChange getCurrentUser hatası');
-      } finally {
-        if (mounted) setLoading(false);
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
+        setMustChangePasswordState(null); // parlamayı önleyen satır
+        await kullaniciBilgisiYukle();
+      } else if (event === 'SIGNED_OUT') {
+        setPasswordRecoveryMode(false);
+        setOrganizationId(null);
+        setMustChangePasswordState(null); // false DEĞİL, null
+        setMustChangePassword(false);
+        setAuthHatasi(false);
       }
+      if (mounted) setLoading(false);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [kullaniciBilgisiYukle]);
 
-  if (loading) {
+  const bilgiBekleniyor = !!session && !passwordRecoveryMode && mustChangePassword === null;
+
+  if (loading || bilgiBekleniyor) {
     return (
       <SafeAreaProvider>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-          <ActivityIndicator size="large" color={isDark ? colors.primaryAccent : colors.primary} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, padding: 24 }}>
+          {authHatasi ? (
+            <>
+              <Text style={{ color: colors.text, fontSize: 15, textAlign: 'center', marginBottom: 16 }}>
+                Hesap bilgileriniz alinamadi. Baglantinizi kontrol edip tekrar deneyin.
+              </Text>
+              <TouchableOpacity
+                onPress={kullaniciBilgisiYukle}
+                style={{ backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 28, marginBottom: 12 }}
+              >
+                <Text style={{ color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' }}>Tekrar Dene</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => supabase.auth.signOut()}>
+                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Cikis Yap</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <ActivityIndicator size="large" color={isDark ? colors.primaryAccent : colors.primary} />
+          )}
         </View>
       </SafeAreaProvider>
     );
@@ -260,7 +278,7 @@ function AppInner() {
                 <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
                 <Stack.Screen name="ResetPassword"  component={ResetPasswordScreen} />
               </>
-            ) : mustChangePassword ? (
+            ) : mustChangePassword === true ? (
               <Stack.Screen name="ForcePasswordChange" component={ForcePasswordChangeScreen} />
             ) : (
               <>
