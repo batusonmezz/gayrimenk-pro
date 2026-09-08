@@ -5,6 +5,7 @@ import { sozlesmeleriGetir, SozlesmeKayit } from '../services/storage';
 import { useTheme } from '../theme';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { escapeHtml } from '../utils/escapeHtml';
 
 export default function MalSahibiScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
@@ -46,7 +47,7 @@ export default function MalSahibiScreen({ navigation }: any) {
 </head>
 <body>
 <h1>MAL SAHİBİ KİRA RAPORU</h1>
-<h2>${ad}</h2>
+<h2>${escapeHtml(ad)}</h2>
 
 <table>
   <tr>
@@ -65,11 +66,11 @@ export default function MalSahibiScreen({ navigation }: any) {
     const durum = kalanGun < 0 ? 'Süresi Geçmiş' : kalanGun <= 60 ? 'Bitiyor' : 'Aktif';
     const renkStyle = kalanGun < 0 ? 'color:red' : kalanGun <= 60 ? 'color:orange' : 'color:green';
     return `<tr>
-      <td>${k.formData?.kapi_no || '-'}</td>
-      <td>${k.kiraci_ad || '-'}</td>
-      <td>${k.aylik_kira || '-'} TL</td>
-      <td>${k.formData?.baslangic_tarihi || '-'}</td>
-      <td>${bitis || '-'}</td>
+      <td>${escapeHtml(k.formData?.kapi_no) || '-'}</td>
+      <td>${escapeHtml(k.kiraci_ad) || '-'}</td>
+      <td>${escapeHtml(k.aylik_kira) || '-'} TL</td>
+      <td>${escapeHtml(k.formData?.baslangic_tarihi) || '-'}</td>
+      <td>${escapeHtml(bitis) || '-'}</td>
       <td style="${renkStyle}"><b>${durum}</b></td>
     </tr>`;
   }).join('')}

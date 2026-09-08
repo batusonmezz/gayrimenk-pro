@@ -1,12 +1,14 @@
 import { VARSAYILAN_OZEL_MADDELER, VARSAYILAN_GENEL_MADDELER } from '../constants/prompts';
 import { sayiYaziya } from '../utils/sayiYaziya';
+import { escapeHtml, escapeAll } from '../utils/escapeHtml';
 
-export function generateKiraSozlesmesiHTML(data: Record<string, string>, ozelMaddeler?: string[], genelMaddeler?: string[], fotograflar?: Record<string, string>, esyaListesi?: { ad: string; marka: string; adet: string }[]): string {
+export function generateKiraSozlesmesiHTML(rawData: Record<string, string>, ozelMaddeler?: string[], genelMaddeler?: string[], fotograflar?: Record<string, string>, esyaListesi?: { ad: string; marka: string; adet: string }[]): string {
+  const data = escapeAll(rawData);
   const yillikKira = data.aylik_kira
     ? (parseInt(data.aylik_kira.replace(/\./g, '')) * 12).toLocaleString('tr-TR') + ' TL'
     : '.....................';
 
-  const esyaVar = data.simdiki_durum === 'Eşyalı' && esyaListesi && esyaListesi.length > 0;
+  const esyaVar = rawData.simdiki_durum === 'Eşyalı' && esyaListesi && esyaListesi.length > 0;
   const fotoVar = fotograflar && (fotograflar.kirayanOn || fotograflar.kiraciOn);
   const sayfaSayisi = 3 + (esyaVar ? 2 : 0) + (fotoVar ? 1 : 0);
   const toplamSayfa = sayfaSayisi * 2;
@@ -166,17 +168,18 @@ ${tbKapat}
 <div class="page-break"></div>
 ${tbAc}
 <div class="section-title">ÖZEL KOŞULLAR</div>
-${(ozelMaddeler && ozelMaddeler.length > 0 ? ozelMaddeler : VARSAYILAN_OZEL_MADDELER(data))
-  .map((madde, i) => `<div class="madde"><b>${i + 1}-</b> ${madde}</div>`).join('\n')}
+${(ozelMaddeler && ozelMaddeler.length > 0 ? ozelMaddeler : VARSAYILAN_OZEL_MADDELER(rawData))
+  .map((madde, i) => `<div class="madde"><b>${i + 1}-</b> ${escapeHtml(madde)}</div>`).join('\n')}
 ${imzaKisa}
 ${tbKapat}
 <div class="page-break"></div>
 ${tbAc}
 <div class="section-title">GENEL KOŞULLAR</div>
-${(genelMaddeler && genelMaddeler.length > 0 ? genelMaddeler : VARSAYILAN_GENEL_MADDELER(esyaVar, data))
+${(genelMaddeler && genelMaddeler.length > 0 ? genelMaddeler : VARSAYILAN_GENEL_MADDELER(esyaVar, rawData))
   .map((madde, i) => {
     const sayfaIfade = `${toplamSayfa} (${toplamSayfaYazi})`;
-    let metin = madde.replace('{yetkili_mahkeme}', `<b>${data.yetkili_mahkeme || '............'}</b>`);
+    let metin = escapeHtml(madde);
+    metin = metin.replace('{yetkili_mahkeme}', `<b>${data.yetkili_mahkeme || '............'}</b>`);
     if (metin.includes('{sayfa_sayisi}')) {
       metin = metin.replace('{sayfa_sayisi}', sayfaIfade);
     } else if (metin.startsWith('İşbu kira sözleşmesi 2 (iki) nüsha')) {
@@ -221,13 +224,13 @@ ${tbAc}
       rows.push(`
     <tr style="background:${Math.floor(i / 2) % 2 === 0 ? '#fff' : '#f9f9f9'}">
       <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:5%">${i + 1}</td>
-      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:25%">${esya.ad}</td>
-      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:15%">${esya.marka || '-'}</td>
-      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:5%;text-align:center">${esya.adet}</td>
+      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:25%">${escapeHtml(esya.ad)}</td>
+      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:15%">${escapeHtml(esya.marka) || '-'}</td>
+      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:5%;text-align:center">${escapeHtml(esya.adet)}</td>
       <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:5%">${sonraki ? i + 2 : ''}</td>
-      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:25%">${sonraki ? sonraki.ad : ''}</td>
-      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:15%">${sonraki ? (sonraki.marka || '-') : ''}</td>
-      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:5%;text-align:center">${sonraki ? sonraki.adet : ''}</td>
+      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:25%">${sonraki ? escapeHtml(sonraki.ad) : ''}</td>
+      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:15%">${sonraki ? (escapeHtml(sonraki.marka) || '-') : ''}</td>
+      <td style="padding:3px 6px;border:1px solid #ddd;font-size:8pt;width:5%;text-align:center">${sonraki ? escapeHtml(sonraki.adet) : ''}</td>
     </tr>`);
     }
     return rows;
