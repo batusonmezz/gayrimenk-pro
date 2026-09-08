@@ -279,14 +279,43 @@ KAPATILANLAR:
   hatasini duzeltebilmeli)
 
 ACIK KALANLAR (build 4'e):
-- Y4 — Zorunlu sifre degistirme kapisi 3 yoldan atlanabiliyor
+- Y4 — ✅ KAPANDI (Eylul 2026). Zorunlu sifre degistirme kapisi DORT yoldan
+  atlanabiliyordu: (1) clear_must_change_password RPC'si parametresiz ve
+  kontrolsuzdu, giris yapmis herkes cagirip bayragi dusurebiliyordu;
+  (2) kapi yalnizca navigasyoneldi, RLS'te karsiligi yok; (3) getCurrentUser
+  hata verirse catch sadece log atiyordu, bayrak false kalip kullanici iceri
+  giriyordu (fail-open); (4) ForcePasswordChangeScreen bayragi sifreyi
+  degistirmeden ONCE temizliyordu, updateUser patlarsa bayrak zaten silinmis
+  oluyordu — saldiri degil, normal kullanimda olusan siralama hatasi.
+  Cozum: migration 025 ile auth.users uzerinde on_auth_password_changed
+  trigger'i (bayrak artik sifrenin GERCEKTEN degismesinin sonucu), RPC
+  NO-OP'a cevrildi, istemcide bayrak uc durumlu yapilip null iken MainTabs
+  render edilmiyor. 1, 3 ve 4 kapandi. 2 (RLS karsiligi) BILEREK
+  yapilmadi: asil risk gecici sifreyi emlakcinin bilmesi, onu RLS
+  engellemez — kalici cozum davet linki/OTP, ayri is.
 - O1 — ✅ KAPANDI (Eylul 2026). API'de acik kayit vardi; iOS canli oldugu
   icin anon key herkeste ve isteyen hesap acip proxy'ye vurabiliyordu.
   Supabase'de "Allow new users to sign up" kapatildi. mailer_autoconfirm'e
   DOKUNULMADI: autoconfirm yalnizca signup yolunda anlamli, signup kapaninca
   saldiri yuzeyi kalmadi. Davet akisi etkilenmedi (admin.createUser ayri yol,
   cihazda dogrulandi).
-- O2 — pdfTemplate.ts ve MalSahibiScreen'de kacissiz kullanici metni
+- O2 — ✅ KAPANDI (Eylul 2026). pdfTemplate.ts ve MalSahibiScreen.tsx
+  kullanici metnini dogrudan HTML'e gomuyordu. Risk script degil BELGE
+  BUTUNLUGU idi: ad alanina HTML yazan biri uretilen sozlesmenin gorunumunu
+  degistirebilir, metin gizleyebilir ya da ekleyebilirdi — imzalanacak bir
+  belgede kabul edilemez. Cozum: yeni src/utils/escapeHtml.ts
+  (escapeHtml + escapeAll). pdfTemplate'te ilk parametre rawData'ya
+  cevrilip fonksiyon girisinde `const data = escapeAll(rawData)` yapildi,
+  boylece govdedeki onlarca ${data.x} noktasi tek tek sarilmadan korunuyor.
+  DIKKAT — CIFT KACISLAMA TUZAGI: madde metinleri ayrica escapeHtml'den
+  geciyor, bu yuzden VARSAYILAN_OZEL_MADDELER ve VARSAYILAN_GENEL_MADDELER
+  cagrilarina HAM veri (rawData) veriliyor; kacisli veri verilseydi madde
+  icindeki kullanici metni iki kez kacislanip "&amp;lt;" gibi bozuk cikardi.
+  Esya tablosunun HER IKI sutunu (esya ve sonraki) kacisli. Kasitli HTML
+  (yetkili mahkeme <b> sarmalayicisi) ve hesaplanmis degerler
+  (yillikKira, sayfa sayisi, renkStyle, durum etiketleri) dokunulmadi.
+  sozlesmeMetni.ts KAPSAM DISI: duz metin uretiyor, orada kacislama YANLIS
+  olurdu. Tarayicida dogrulandi.
 - O3 — TC + base64 kimlik fotosu sifresiz lokal JSON'a dusuyor (KVKK)
 - O4 — ✅ KAPANDI (Eylul 2026). anthropic.ts'teki callDirectApi olu yolu
   EXPO_PUBLIC_ANTHROPIC_API_KEY okuyordu. callDirectApi, DIRECT_API_KEY,
@@ -502,6 +531,13 @@ sonra yapilacak.
 - OZELLIK: uygulamada bir sozlesmenin esya listesini SALT OKUNUR gorme yolu
   yok. Su an ancak duzenleme formunda ya da PDF'te goruunuyor. Sozlesme
   detayinda kayitli esyalari listeleyen bir gorunum faydali olur.
+- anthropic-proxy gibi, `clear_must_change_password` de HENUZ SILINEMEZ:
+  yayindaki build cagiriyor. Build 4 kullanicilara yayildiktan sonra DROP
+  edilecek. Build 4'un istemcisi artik cagirmiyor, yol acik.
+- Cevrimdisi acilista bir an GIRIS EKRANI parliyor: App.tsx bootstrap'inde
+  getSession() basarisiz olunca `setSession(null)` yapiliyor, sonra
+  onAuthStateChange oturumu geri buluyor. Guvenlik sorunu degil (daha
+  kisitlayici yon) ama "cikis yapmisim" hissi veriyor. Kozmetik.
 
 ### GIT / PLAY DURUMU
 
