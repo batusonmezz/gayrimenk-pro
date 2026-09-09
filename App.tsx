@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ActivityIndicator, Image, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -176,14 +176,16 @@ function AppInner() {
   const [mustChangePassword, setMustChangePasswordState] = useState<boolean | null>(null);
   const [authHatasi, setAuthHatasi] = useState(false);
   const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
+  const yuklenenKullaniciId = useRef<string | null>(null);
 
-  const kullaniciBilgisiYukle = useCallback(async () => {
+  const kullaniciBilgisiYukle = useCallback(async (kullaniciId: string | null) => {
     setAuthHatasi(false);
     try {
       const user = await withTimeout(auth.getCurrentUser());
       setOrganizationId(user?.organizationId ?? null);
       setRole(user?.role ?? null);
       setMustChangePasswordState(user?.mustChangePassword ?? false);
+      yuklenenKullaniciId.current = kullaniciId;   // SADECE basarida
     } catch {
       console.warn('[App] getCurrentUser hatasi - kapi kapali tutuluyor');
       setAuthHatasi(true); // mustChangePassword null KALIR
@@ -199,7 +201,7 @@ function AppInner() {
         if (!mounted) return;
         setSession(session);
         if (session) {
-          await kullaniciBilgisiYukle();
+          await kullaniciBilgisiYukle(session.user.id);
         }
       } catch {
         if (!mounted) return;
@@ -220,14 +222,21 @@ function AppInner() {
         return;
       }
       if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
+        if (yuklenenKullaniciId.current === session.user.id) {
+          // Sekme geri geldi; supabase ayni oturum icin SIGNED_IN'i tekrar
+          // yayinladi. Bilgi zaten elimizde — kapiyi kapatma.
+          if (mounted) setLoading(false);
+          return;
+        }
         setMustChangePasswordState(null); // parlamayı önleyen satır
-        await kullaniciBilgisiYukle();
+        await kullaniciBilgisiYukle(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setPasswordRecoveryMode(false);
         setOrganizationId(null);
         setMustChangePasswordState(null); // false DEĞİL, null
         setMustChangePassword(false);
         setAuthHatasi(false);
+        yuklenenKullaniciId.current = null;
       }
       if (mounted) setLoading(false);
     });
@@ -254,7 +263,7 @@ function AppInner() {
                 Hesap bilgileriniz alinamadi. Baglantinizi kontrol edip tekrar deneyin.
               </Text>
               <TouchableOpacity
-                onPress={kullaniciBilgisiYukle}
+                onPress={() => kullaniciBilgisiYukle(session?.user?.id ?? null)}
                 style={{ backgroundColor: isDark ? colors.primaryAccent : colors.primary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 28, marginBottom: 12 }}
               >
                 <Text style={{ color: colors.textOnPrimary, fontSize: 15, fontWeight: '500' }}>Tekrar Dene</Text>
