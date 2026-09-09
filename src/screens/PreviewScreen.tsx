@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { sozlesmeKaydet, sozlesmeGuncelle } from '../services/storage';
+import { uyari, hataMetni } from '../utils/uyari';
 import { VARSAYILAN_OZEL_MADDELER, VARSAYILAN_GENEL_MADDELER } from '../constants/prompts';
 import { sozlesmeMetniUret } from '../services/sozlesmeMetni';
 import { AI_MADDE_DUZENLEME } from '../config/features';
@@ -101,7 +102,10 @@ export default function PreviewScreen({ navigation, route }: any) {
         navigation.navigate('MainTabs');
       } catch (e) {
         console.log('PDF hatası (web):', e);
-        Alert.alert('Kaydedilemedi', 'Sözleşme kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.');
+        uyari(
+          'Kaydedilemedi',
+          `Sözleşme kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.\n\nTeknik detay: ${hataMetni(e)}`
+        );
       }
       return;
     }
@@ -131,7 +135,10 @@ export default function PreviewScreen({ navigation, route }: any) {
       navigation.navigate('MainTabs');
     } catch (e) {
       console.log('PDF hatası:', e);
-      Alert.alert('Kaydedilemedi', 'Sözleşme kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.');
+      uyari(
+        'Kaydedilemedi',
+        `Sözleşme kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.\n\nTeknik detay: ${hataMetni(e)}`
+      );
     }
   };
 
