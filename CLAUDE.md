@@ -165,9 +165,13 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - Ekran gorselleri test org'undaki temiz veriyle uretildi, gercek kirac
   verisi ve kisisel profil fotografi KULLANILMADI
 - Yapay zeka ile uretilmis oge beyani verildi (gorseller AI ile hazirlandi)
-- URETIME ERISIM YOK: 13 Kasim 2023 sonrasi kisisel hesap kurali geregi
-  kapali test sarti uygulaniyor. Alpha kanalinda 14 tester, 14 gun
-  kesintisiz kalmali, sonra uretim erisimi basvurusu (~1 hafta inceleme)
+- URETIME ERISIM KURALI GUNCELLENDI: 13 Kasim 2023 sonrasi kisisel hesap
+  kurali geregi kapali test sarti uygulaniyor; minimum tester sayisi 20'den
+  12'ye dustu, 14 gun kesintisiz kalma sarti aynen duruyor. Alpha
+  kanalindaki mevcut 14 tester yeni esigi geciyor ama pay sadece 2 kisi.
+  2026'nin asil elemesi sayi degil ETKILESIM: uretim erisimi basvurusu
+  testerlarin uygulamanin tum ozelliklerini kullanip kullanmadigini ve
+  kullanimin gercek uretim davranisina benzeyip benzemedigini soruyor
 - Kritik: listeye mail eklemek yetmiyor, her tester kendi Android
   telefonundan katilim linkiyle katilmali. Kurulum da yetmiyor, Nisan
   2026'dan beri Google gercek etkilesim ariyor
@@ -233,6 +237,17 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
   (yaklasan vade, yenilenen sozlesme) gercek cozum
 - Mapping dosyasi (R8/proguard) yuklenmiyor, Play'de cokme raporlari
   okunaksiz
+- O3-d: 28 adet 2-argumanli Alert.alert cagrisi hala uyari()'ye
+  cevrilmedi (web'de gorunmuyor)
+- O3-e: 6 buton dizili onay diyalogu (KayitlarScreen:69 sozlesme silme,
+  SitelerScreen:156, OdemeTakipScreen:268/275/324/330,
+  ForcePasswordChangeScreen:45) web'de hic acilmiyor
+- OdemeTakipScreen:160 uc secenekli secim web'de Modal gerektiriyor
+- Uygulama tamamen bos bir sozlesmenin kaydedilmesine izin veriyor;
+  kiraci ve kiraya veren adi zorunlu olmali
+- anthropic-proxy stub'i ve clear_must_change_password NO-OP'u
+  KALDIRILMAYACAK: App Store'daki build 3 ikisini de cagiriyor. Build 4
+  yayina girip kullanicilar guncelledikten sonra silinebilir
 
 ### Faz 3.7 — Guvenlik denetimi + iOS canli yayin — 26 Agustos 2026
 
@@ -316,7 +331,9 @@ ACIK KALANLAR (build 4'e):
   (yillikKira, sayfa sayisi, renkStyle, durum etiketleri) dokunulmadi.
   sozlesmeMetni.ts KAPSAM DISI: duz metin uretiyor, orada kacislama YANLIS
   olurdu. Tarayicida dogrulandi.
-- O3 — TC + base64 kimlik fotosu sifresiz lokal JSON'a dusuyor (KVKK)
+- O3 — ✅ KAPANDI (Eylul 2026). TC + base64 kimlik fotosu sifresiz lokal
+  JSON'a dusuyordu. Lokal depolama yedegi (HybridStorageService) tamamen
+  kaldirilip eski JSON temizlendi — detay Faz 3.8.
 - O4 — ✅ KAPANDI (Eylul 2026). anthropic.ts'teki callDirectApi olu yolu
   EXPO_PUBLIC_ANTHROPIC_API_KEY okuyordu. callDirectApi, DIRECT_API_KEY,
   DIRECT_API_URL, USE_REMOTE_AI ve fallback dallanmasi silindi; callClaude
@@ -335,20 +352,23 @@ LOGLANMIYOR — eskisi sozlesmenin ilk 80 karakterini logluyordu, icinde
 isim ve TC olabiliyordu). Yeni anahtar Supabase Secrets'ta, istemciye
 inmiyor.
 
-**BUILD 4 / versionCode 18 ICERIGI**
-1. SOZLESME URETIMINDEN AI'YI KALDIR (en onemli is). prompts.ts'teki
-   SOZLESME_YAZARI_PROMPT zaten deterministik bir sablon — modele
-   verilen tek gorev {} alanlarini doldurmak. VARSAYILAN_OZEL_MADDELER
-   ve VARSAYILAN_GENEL_MADDELER zaten TS fonksiyonu, maddeleri yerel
-   uretiyorlar. Yani model burada yazar degil, pahali bir
-   arama-degistirme motoru. Yerel fonksiyona cevrilince: kesinti riski
-   yok, maliyet yok, her seferinde ayni cikti (hukuki belge icin sart)
-2. Y4, O2, O3, O4 duzeltmeleri
-3. Gizlilik linkleri (ProfilScreen + Signup + ForcePasswordChange —
-   commit'lendi, build bekliyor)
-4. Rol yanip sonme hatasi: cikis yapinca eski rol onbellekte kaliyor,
-   yeni oturumda bir an yanlis rol goruunuyor
-5. app.config.js: buildNumber '4', versionCode 18
+**BUILD 4 / versionCode 18 ICERIGI — TAMAMLANDI**
+1. ✅ SOZLESME URETIMINDEN AI KALDIRILDI (Faz 3.8). prompts.ts'teki
+   SOZLESME_YAZARI_PROMPT deterministik bir sablondu — modele verilen tek
+   gorev {} alanlarini doldurmakti. VARSAYILAN_OZEL_MADDELER ve
+   VARSAYILAN_GENEL_MADDELER zaten TS fonksiyonuydu, maddeleri yerel
+   uretiyordu. Model burada yazar degil, pahali bir arama-degistirme
+   motoruydu. Yerel fonksiyona cevrildi: kesinti riski kalmadi, maliyet
+   sifirlandi, her seferinde ayni cikti garanti altina alindi (hukuki
+   belge icin sarttı)
+2. ✅ Y4, O2, O3, O4 duzeltmeleri TAMAMLANDI
+3. ✅ Gizlilik linkleri TAMAMLANDI, commit'li (ProfilScreen + Signup +
+   ForcePasswordChange)
+4. ✅ Rol yanip sonme hatasi giderildi (Y4-b + Y4-c): cikis yapinca eski
+   rolun onbellekte kalip yeni oturumda bir an yanlis rol gostermesi
+   sorunu kapandi
+5. ✅ app.config.js guncellendi: version '7.6.0', buildNumber '4',
+   versionCode 18
 
 **BEKLEYEN DIGER ISLER**
 - Play kapali testi: 14 tester, 14 gun, testerlari dondurmeye devam
@@ -358,7 +378,7 @@ inmiyor.
 - Site tanitim sayfasi (Claude Design, Next.js 16 + Tailwind v4)
 - gayrimenk.com projesi: C:\Users\Lenovo\Desktop\Claude\Gayrimenk.com
 
-### Faz 3.8 — AI bagimliligini kaldirma (Eylul 2026, DEVAM EDIYOR)
+### Faz 3.8 — AI bagimliligini kaldirma (Eylul 2026) — TAMAMLANDI
 
 **BULGU: AI'in urettigi metin hukuki belgeye HIC ULASMIYOR** (kodda + canli
 DB'de dogrulandi)
@@ -539,6 +559,33 @@ sonra yapilacak.
   onAuthStateChange oturumu geri buluyor. Guvenlik sorunu degil (daha
   kisitlayici yon) ama "cikis yapmisim" hissi veriyor. Kozmetik.
 
+**O3 — LOKAL DEPOLAMA YEDEGI KALDIRILDI**
+HybridStorageService bulut hatasini kendi icinde yakalayip cihazdaki duz
+metin JSON'a dusuyordu; ekranlardaki hata gosterimleri hic tetiklenmiyordu.
+Kullanici buluttan degil, aylar oncesine ait bayat lokal kayitlardan
+okuyordu (tarayicida 6 hayalet kayit cikti). Storage katmani dogrudan
+SupabaseStorageService'e sabitlendi, Hybrid ve Local servis dosyalari ve
+USE_CLOUD_STORAGE bayragi silindi. eskiVeriTemizle.ts acilista eski JSON'u
+siliyor (TC, adres, telefon, base64 kimlik fotografi iceriyordu).
+
+**O3-c — react-native-web'de Alert BOS FONKSIYON cikti**
+node_modules/react-native-web/dist/exports/Alert/index.js icerigi
+"class Alert { static alert() {} }" idi. Tarayicida Alert.alert(...)
+sessizce hicbir sey yapmiyor, hata da vermiyordu. Bu yuzden web'de yapilan
+testler 44 noktada kordu: silme onaylari, odeme onay/red, davet fallback'i,
+sifre degisimi sonrasi cikis hic calismiyordu. iOS/Android etkilenmedi.
+src/utils/uyari.ts eklendi (uyari/onay/hataMetni); simdilik sadece
+PreviewScreen bu sarmalayiciyi kullaniyor.
+
+**Y4-c — sekme geri geldiginde uygulama kapanma hatasi giderildi**
+@supabase/auth-js 2.106.2, sekme gizlenip geri geldiginde oturum hic
+degismemis olsa bile SIGNED_IN olayini tekrar yayinliyordu
+(_onVisibilityChanged -> _recoverAndRefresh -> _notifyAllSubscribers).
+Y4-b'de parlamayi onlemek icin konulan setMustChangePasswordState(null) bunu
+tam ekran spinner'a, getCurrentUser yetismezse hata ekranina ceviriyordu.
+Ayni kullanici icin bilgi zaten yuklenmisse tekrarlanan SIGNED_IN artik yok
+sayiliyor. Sadece web'i etkiliyordu (isBrowser korumali).
+
 ### GIT / PLAY DURUMU
 
 - `origin/main` = `1cfeb03` (versionCode 12)
@@ -686,7 +733,9 @@ B4.5. ✅ Storage cleanup + production — upload_dekont(uuid,text,text) drop (0
 
 - **Email onayı:** Şu an KAPALI (Supabase Auth settings). Production'da açılacak.
   Trigger zaten `needsEmailConfirmation` durumunu handle ediyor — sorun olmayacak.
-- **Storage:** `USE_CLOUD_STORAGE=true` — HybridStorageService (Supabase önce, local fallback)
+- **Storage:** Dogrudan SupabaseStorageService kullaniliyor. HybridStorageService/
+  LocalStorageService ve `USE_CLOUD_STORAGE` bayragi kaldirildi (Faz 3.8, O3);
+  lokal duz-metin yedek yok.
 - **AI:** anthropic-proxy STUB durumda (Eylul 2026) — Anthropic'e cagri
   YAPILMIYOR, sabit metin donuyor. Build 4'te fonksiyon tamamen silinecek.
   Detay: Faz 3.8.
