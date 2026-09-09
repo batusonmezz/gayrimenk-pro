@@ -1,13 +1,9 @@
-import { USE_CLOUD_STORAGE } from '../config/features';
-import { LocalStorageService } from './LocalStorageService';
-import { HybridStorageService } from './HybridStorageService';
+import { SupabaseStorageService } from './SupabaseStorageService';
 
 export type { SozlesmeKayit } from './types';
 export type { IStorageService } from './IStorageService';
 
-const _storage = USE_CLOUD_STORAGE
-  ? new HybridStorageService()
-  : new LocalStorageService();
+const _storage = new SupabaseStorageService();
 
 export const sozlesmeKaydet = _storage.sozlesmeKaydet.bind(_storage);
 export const sozlesmeleriGetir = _storage.sozlesmeleriGetir.bind(_storage);

@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, ThemeProvider, useTheme } from './src/theme';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './src/storage/supabaseClient';
+import { eskiLokalVeriyiTemizle } from './src/storage/eskiVeriTemizle';
 import * as auth from './src/services/auth';
 import { setOrganizationId, setRole, setMustChangePassword, getRole, getAvatarUrl, subscribeAvatar } from './src/services/authState';
 import ForcePasswordChangeScreen from './src/screens/ForcePasswordChangeScreen';
@@ -236,6 +237,10 @@ function AppInner() {
       subscription.unsubscribe();
     };
   }, [kullaniciBilgisiYukle]);
+
+  useEffect(() => {
+    eskiLokalVeriyiTemizle();
+  }, []);
 
   const bilgiBekleniyor = !!session && !passwordRecoveryMode && mustChangePassword === null;
 

@@ -1,5 +1,3 @@
-export const USE_CLOUD_STORAGE = true;
-
 // AI ile madde duzenleme (PreviewScreen sohbet kutusu). KAPALI.
 // Neden: (1) anthropic-proxy stub durumda, cagri gecersiz JSON donuyor ve
 // maddeleriDuzenle catch dalinda orijinal diziyi koruyor — ozellik calismiyor
