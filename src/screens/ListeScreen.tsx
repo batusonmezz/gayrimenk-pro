@@ -32,6 +32,7 @@ export default function ListeScreen({ navigation }: any) {
   const [filtre, setFiltre] = useState<Filtre>('Hepsi');
   const [arama, setArama] = useState('');
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [hata, setHata] = useState<string | null>(null);
 
   const { colors, isDark } = useTheme();
   const styles = makeStyles(colors, isDark);
@@ -41,13 +42,16 @@ export default function ListeScreen({ navigation }: any) {
     gecmis: colors.error,
   };
 
-  useFocusEffect(useCallback(() => {
+  const veriCek = useCallback(() => {
+    setHata(null);
     setYukleniyor(true);
     sozlesmeleriGetir()
       .then(setKayitlar)
-      .catch(() => {})
+      .catch(() => setHata('Sözleşmeler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.'))
       .finally(() => setYukleniyor(false));
-  }, []));
+  }, []);
+
+  useFocusEffect(useCallback(() => { veriCek(); }, [veriCek]));
 
   const filtrelenmis = kayitlar.filter(k => {
     const bitis = k.formData?.bitis_tarihi || '';
@@ -169,6 +173,13 @@ export default function ListeScreen({ navigation }: any) {
               <View style={styles.bosView}>
                 <ActivityIndicator size="large" color={colors.primaryAccent} />
               </View>
+            ) : hata ? (
+              <View style={styles.bosView}>
+                <Text style={styles.hataText}>{hata}</Text>
+                <TouchableOpacity onPress={veriCek} style={styles.tekrarBtn}>
+                  <Text style={styles.tekrarText}>Tekrar Dene</Text>
+                </TouchableOpacity>
+              </View>
             ) : filtrelenmis.length === 0 && (
               <View style={styles.bosView}>
                 <Text style={styles.bosText}>Kayıt bulunamadı</Text>
@@ -205,6 +216,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], isDark: boole
     tableRow: { flexDirection: 'row', paddingVertical: 10, backgroundColor: colors.surface, borderBottomWidth: 0.5, borderBottomColor: colors.border },
     tableRowAlt: { backgroundColor: colors.surfaceAlt },
     td: { fontSize: 12, color: colors.text, paddingHorizontal: 8 },
-    bosView: { padding: 40, alignItems: 'center' },
+    bosView: { padding: 40, alignItems: 'center', gap: 12 },
     bosText: { color: colors.textMuted, fontSize: 14 },
+    hataText: { color: colors.error, fontSize: 14, textAlign: 'center', paddingHorizontal: 24 },
+    tekrarBtn: { backgroundColor: isDark ? colors.primaryAccent : colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+    tekrarText: { color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' },
   });

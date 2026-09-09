@@ -12,6 +12,7 @@ import OdemePlanModal from '../components/OdemePlanModal';
 export default function KayitlarScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [hata, setHata] = useState<string | null>(null);
   const [role, setRoleState] = useState<string | null>(null);
   const [odemeCount, setOdemeCount] = useState<Record<string, number>>({});
   const [rpcYukleniyor, setRpcYukleniyor] = useState<string | null>(null);
@@ -33,13 +34,16 @@ export default function KayitlarScreen({ navigation }: any) {
   }, []);
 
   // Sözleşme listesi: ekran odaklandığında yenile
-  useFocusEffect(useCallback(() => {
+  const veriCek = useCallback(() => {
+    setHata(null);
     setYukleniyor(true);
     sozlesmeleriGetir()
       .then(setKayitlar)
-      .catch(() => {})
+      .catch(() => setHata('Sözleşmeler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.'))
       .finally(() => setYukleniyor(false));
-  }, []));
+  }, []);
+
+  useFocusEffect(useCallback(() => { veriCek(); }, [veriCek]));
 
   // Ödeme sayıları: role veya kayitlar değişince yenile (soğuk başlangıç güvenli)
   useEffect(() => {
@@ -113,6 +117,14 @@ export default function KayitlarScreen({ navigation }: any) {
         {yukleniyor ? (
           <View style={styles.empty}>
             <ActivityIndicator size="large" color={colors.primaryAccent} />
+          </View>
+        ) : hata ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>⚠️</Text>
+            <Text style={styles.hataText}>{hata}</Text>
+            <TouchableOpacity onPress={veriCek} style={styles.tekrarBtn}>
+              <Text style={styles.tekrarText}>Tekrar Dene</Text>
+            </TouchableOpacity>
           </View>
         ) : kayitlar.length === 0 ? (
           <View style={styles.empty}>
@@ -228,6 +240,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], _isDark: bool
     empty: { alignItems: 'center', marginTop: 80, gap: 12 },
     emptyIcon: { fontSize: 48 },
     emptyText: { fontSize: 15, color: colors.textMuted },
+    hataText: { fontSize: 14, color: colors.error, textAlign: 'center', paddingHorizontal: 24 },
+    tekrarBtn: { backgroundColor: colors.primaryAccent, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, marginTop: 4 },
+    tekrarText: { color: colors.textOnPrimary, fontSize: 13, fontWeight: '500' },
     card: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: colors.border, flexDirection: 'column' },
     cardRow: { flexDirection: 'row', alignItems: 'center' },
     cardLeft: { flex: 1, gap: 3 },

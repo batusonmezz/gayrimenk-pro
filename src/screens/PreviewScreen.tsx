@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -71,33 +71,38 @@ export default function PreviewScreen({ navigation, route }: any) {
     const html = generateKiraSozlesmesiHTML(formData, ozelMaddeler, genelMaddeler, fotograflar, esyaListesi);
 
     if (Platform.OS === 'web') {
-      const yeniPencere = window.open('', '_blank');
-      if (yeniPencere) {
-        yeniPencere.document.write(html);
-        yeniPencere.document.close();
-        yeniPencere.focus();
-        setTimeout(() => { yeniPencere.print(); }, 500);
+      try {
+        const yeniPencere = window.open('', '_blank');
+        if (yeniPencere) {
+          yeniPencere.document.write(html);
+          yeniPencere.document.close();
+          yeniPencere.focus();
+          setTimeout(() => { yeniPencere.print(); }, 500);
+        }
+        if (kayitId) {
+          await sozlesmeGuncelle(kayitId, formData, JSON.stringify(ozelMaddeler), ozelMaddeler, genelMaddeler, fotograflar, esyaListesi, kiraciPersonId, buildingId, malSahibiPersonId);
+        } else {
+          await sozlesmeKaydet({
+            tur: title,
+            kiraci_ad: formData?.kiraci_ad || '',
+            kiraya_veren_ad: formData?.kiraya_veren_ad || '',
+            aylik_kira: formData?.aylik_kira || '',
+            formData: formData || {},
+            sozlesmeMetni: JSON.stringify(ozelMaddeler),
+            ozelMaddeler,
+            genelMaddeler,
+            fotograflar,
+            esyaListesi,
+            kiraci_person_id: kiraciPersonId,
+            building_id: buildingId,
+            mal_sahibi_person_id: malSahibiPersonId,
+          });
+        }
+        navigation.navigate('MainTabs');
+      } catch (e) {
+        console.log('PDF hatası (web):', e);
+        Alert.alert('Kaydedilemedi', 'Sözleşme kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.');
       }
-      if (kayitId) {
-        await sozlesmeGuncelle(kayitId, formData, JSON.stringify(ozelMaddeler), ozelMaddeler, genelMaddeler, fotograflar, esyaListesi, kiraciPersonId, buildingId, malSahibiPersonId);
-      } else {
-        await sozlesmeKaydet({
-          tur: title,
-          kiraci_ad: formData?.kiraci_ad || '',
-          kiraya_veren_ad: formData?.kiraya_veren_ad || '',
-          aylik_kira: formData?.aylik_kira || '',
-          formData: formData || {},
-          sozlesmeMetni: JSON.stringify(ozelMaddeler),
-          ozelMaddeler,
-          genelMaddeler,
-          fotograflar,
-          esyaListesi,
-          kiraci_person_id: kiraciPersonId,
-          building_id: buildingId,
-          mal_sahibi_person_id: malSahibiPersonId,
-        });
-      }
-      navigation.navigate('MainTabs');
       return;
     }
 
@@ -126,6 +131,7 @@ export default function PreviewScreen({ navigation, route }: any) {
       navigation.navigate('MainTabs');
     } catch (e) {
       console.log('PDF hatası:', e);
+      Alert.alert('Kaydedilemedi', 'Sözleşme kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.');
     }
   };
 
