@@ -17,7 +17,7 @@ export default {
   expo: {
     name: getName(),
     slug: 'gayrimenk-pro',
-    version: '7.5.0',
+    version: '7.6.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -34,11 +34,11 @@ export default {
         NSCameraUsageDescription: 'Kimlik belgesi ve ödeme dekontu fotoğrafı çekmek için kameraya erişim gerekir. Çektiğiniz fotoğraflar yalnızca ilgili sözleşme kaydına yüklenir.',
       },
       supportsTablet: false,
-      buildNumber: '3',
+      buildNumber: '4',
       bundleIdentifier: getPackage(),
     },
     android: {
-      versionCode: 17,
+      versionCode: 18,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
