@@ -9,6 +9,13 @@ import { supabase } from '../storage/supabaseClient';
 import { useTheme } from '../theme';
 import OdemePlanModal from '../components/OdemePlanModal';
 
+function trTarihiIso(tr?: string | null): string | null {
+  if (!tr) return null;
+  const m = tr.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return null;
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
 export default function KayitlarScreen({ navigation }: any) {
   const [kayitlar, setKayitlar] = useState<SozlesmeKayit[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -222,7 +229,11 @@ export default function KayitlarScreen({ navigation }: any) {
         }}
         baslik={planModalKayit ? `${planModalKayit.kiraya_veren_ad} → ${planModalKayit.kiraci_ad}` : ''}
         kiraTutariKurus={planModalKayit?.aylikKiraKurus ?? 0}
-        sozlesmeBaslangic={planModalKayit?.tarihIso ?? null}
+        sozlesmeBaslangic={
+          trTarihiIso(planModalKayit?.formData?.baslangic_tarihi)
+            ?? planModalKayit?.tarihIso
+            ?? null
+        }
       />
     </View>
   );

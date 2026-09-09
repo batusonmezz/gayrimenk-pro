@@ -79,15 +79,18 @@ export default function OdemePlanModal({ visible, onClose, onConfirm, baslik, ki
   useEffect(() => {
     if (!visible) return;
     let varsayilanGun = 1;
+    let varsayilanDonem = bugununIlkDonemi();
     if (sozlesmeBaslangic) {
       try {
-        varsayilanGun = parseYerelTarih(sozlesmeBaslangic).getDate();
-      } catch {
-        varsayilanGun = 1;
-      }
+        const d = parseYerelTarih(sozlesmeBaslangic);
+        if (!isNaN(d.getTime())) {
+          varsayilanGun = d.getDate();
+          varsayilanDonem = dateToIlkDonem(d);
+        }
+      } catch { /* varsayilanlar kalir */ }
     }
     setOdemeGunu(varsayilanGun);
-    setIlkDonem(bugununIlkDonemi());
+    setIlkDonem(varsayilanDonem);
     setAySayisi(12);
     setDepozitoDahil(false);
   }, [visible, sozlesmeBaslangic]);
