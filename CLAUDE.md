@@ -666,7 +666,10 @@ olusturulmadigi icin baska sozlesme etkilenmedi.
    "Pending Developer Release" SON DURAK DEGIL: manuel yayin secili
    oldugu icin "Release This Version" dugmesine basilmali.
 
-### GIT / PLAY DURUMU
+### GIT / PLAY DURUMU — TARIHSEL (Haziran 2026)
+
+> Bu bolum Haziran 2026 anlik goruntusudur. GUNCEL durum icin:
+> "Build 4 gonderim durumu" bolumu.
 
 - `origin/main` = `1cfeb03` (versionCode 12)
 - **Play Store versionCode 12** yüklendi (04.06.2026): rol UI + eşya fix + loading
