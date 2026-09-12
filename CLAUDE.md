@@ -372,8 +372,7 @@ inmiyor.
 
 **BEKLEYEN DIGER ISLER**
 - Play kapali testi: 14 tester, 14 gun, testerlari dondurmeye devam
-- Play magaza aciklamasindan AI bolumunu cikar (ozellik geri gelene
-  kadar). Gizlilik politikasindaki Anthropic bolumu KALSIN
+- Play magaza aciklamasindan AI bolumu: bkz. Build 4 gonderim durumu > ACIK — SIRADAKI ADIMLAR
 - Play Console paket adi kaydi (son tarih 30 Eylul 2026)
 - Site tanitim sayfasi (Claude Design, Next.js 16 + Tailwind v4)
 - gayrimenk.com projesi: C:\Users\Lenovo\Desktop\Claude\Gayrimenk.com
@@ -585,6 +584,87 @@ Y4-b'de parlamayi onlemek icin konulan setMustChangePasswordState(null) bunu
 tam ekran spinner'a, getCurrentUser yetismezse hata ekranina ceviriyordu.
 Ayni kullanici icin bilgi zaten yuklenmisse tekrarlanan SIGNED_IN artik yok
 sayiliyor. Sadece web'i etkiliyordu (isBrowser korumali).
+
+**ODEME PLANI VARSAYILANI KIRA BASLANGICINDAN TURETILIYOR**
+OdemePlanModal ilk donem varsayilanini her zaman BUGUNUN ayindan aliyordu
+(setIlkDonem(bugununIlkDonemi())). Ayrica KayitlarScreen modala kira
+baslangicini degil contracts.tarih'i veriyordu — o alan SupabaseStorageService
+tarafindan KAYDIN OLUSTURULDUGU GUN olarak yaziliyor, kira baslangici degil.
+Gercek baslangic form_data.baslangic_tarihi icinde (gg.aa.yyyy).
+Sonuc canli veride cikti: 31.08.2026'da olusturulan, 15.09.2026 baslangicli
+bir sozlesmede plan Agustos 2026'dan basladi, tum vadeler bir ay erken kaydi.
+Duzeltme: varsayilan ay ve gun form_data.baslangic_tarihi'nden turetiliyor,
+parse edilemezse eski davranisa (tarihIso) dusuyor. Kullanicinin modalda
+secim yapma yetenegi degismedi. Commit `011ebab`.
+
+**CANLI VERI DUZELTMESI (SQL)**
+Etkilenen sozlesmenin (MERVE HEKIM / AYGUN YILMAZ, 15.09.2026 baslangicli)
+plani SQL ile duzeltildi. delete_payment_schedule kullanilamadi: depozito
+satirinda dekont vardi ve RPC dekontlu plani silmeyi reddediyor — CLAUDE.md'de
+zaten kayitli olan "tek korumali satir sozlesmeyi kilitliyor, cikis yolu
+sadece SQL" borcunun canli ornegi.
+Cozum: yanlis 2026-08 kira satiri silinip eksik 2027-08 satiri eklendi, tek
+CTE ifadesiyle (DELETE ... RETURNING -> INSERT ... SELECT). Boylece silme
+eslesmezse ekleme de olmuyor, 13. satir riski yok. UNIQUE(contract_id, donem)
+kisiti yuzunden tum satirlari tek seferde +1 ay kaydirmak mumkun degildi.
+Sonuc dogrulandi: 1 depozito (odendi, dekontlu) + 12 kira, 2026-09'dan
+2027-08'e, vadeler ayin 15'i. Zeray Mahal sozlesmelerinde plan
+olusturulmadigi icin baska sozlesme etkilenmedi.
+
+### Build 4 gonderim durumu — 11 Eylul 2026
+
+- Kod durumu: HEAD = `011ebab`, origin/main ile senkron. Build 4 icerigi
+  `27b212c..011ebab` araligindaki 7 commit.
+- EAS production build alindi, iki platform da finished.
+  Android AAB + iOS IPA. Build loglarinda yuklenen ortam degiskenleri
+  yalnizca EXPO_PUBLIC_SUPABASE_ANON_KEY ve EXPO_PUBLIC_SUPABASE_URL —
+  Anthropic anahtari pakete girmedi, O4 temizliginin kaniti.
+- eas.json'da appVersionSource "local": EAS surumu app.config.js'ten
+  aliyor, otomatik artirmiyor. Cikan surum 7.6.0 / versionCode 18 /
+  buildNumber 4.
+- ANDROID: AAB Play Console kapali test (alpha) kanalina yuklendi,
+  rollout baslatildi, durum "Incelemede". Onaylanip "Yayinda"ya
+  gecince testerlar 18'i guncelleme olarak gorecek.
+- iOS: eas submit ile App Store Connect'e yuklendi. DIKKAT — yukleme
+  gonderim DEGIL. Surum olusturma ve incelemeye gonderme adimlari
+  asagida (bkz. Apple yayin adimlari).
+- AI_MADDE_DUZENLEME = false oldugu icin build 4'te hicbir AI yuzeyi yok.
+
+**ACIK — SIRADAKI ADIMLAR**
+- Play magaza aciklamasindan AI bolumu cikarilmadi. Uygulama artik
+  Anthropic'e cagri yapmiyor; beyan-ozellik uyusmazligi hem yayin
+  reddi hem uretim erisimi basvurusunda risk. Gizlilik
+  politikasindaki Anthropic bolumu KALACAK.
+- App Store aciklamasi, anahtar kelimeler ve App Review Notes
+  AI/yapay zeka acisindan kontrol edilmedi. Build 3'ten tasinan
+  notlar artik var olmayan bir ozellikten bahsediyor olabilir.
+- iOS 7.6.0 surumu App Store Connect'te olusturulup incelemeye
+  GONDERILMEDI. Binary yuklu, surum acilmadi. Adimlar: "Apple yayin
+  adimlari" bolumu.
+- Opted-in tester sayisi ve 14 gunluk sayacin gunu BILINMIYOR.
+  Uretim erisimi basvuru tarihi buna bagli; paket adi kaydi son
+  tarih 30 Eylul 2026.
+
+### Apple yayin adimlari (her surumde tekrarlanan)
+
+0. eas submit sonrasi Apple 5-30 dk isler, e-posta gelir. Islenmemis
+   build surum sayfasinda secilemez.
+1. App Store Connect > uygulama > Distribution/App Store bolumu.
+   TESTFLIGHT DEGIL — TestFlight'ta build gormek yayin anlamina gelmez.
+2. Sol menude "iOS App" yanindaki + > New Version > surum numarasi.
+   App Store'da canli olan surumden buyuk olmak ZORUNDA.
+3. Surum sayfasi: Yenilikler metni (guncellemede zorunlu), Build
+   bolumunden ilgili build secimi, ekran gorselleri degismediyse
+   dokunulmaz, aciklama/anahtar kelimeler, App Review Information >
+   Notes (onceki surumden TASINIR, eskimis bilgi kalabilir), demo
+   hesap test1@gmail.com / 123456, Version Release = "Manually
+   release this version".
+4. Save > Add for Review. Sifreleme sorusu cikmaz
+   (ITSAppUsesNonExemptEncryption: false app.config.js'te).
+5. Durumlar: Waiting for Review > In Review > Pending Developer
+   Release > Ready for Distribution.
+   "Pending Developer Release" SON DURAK DEGIL: manuel yayin secili
+   oldugu icin "Release This Version" dugmesine basilmali.
 
 ### GIT / PLAY DURUMU
 
