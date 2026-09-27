@@ -229,8 +229,16 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 **Bilinen acik borclar**
 - Odeme plani dolduktan sonra yeni donem EKLENEMIYOR: olustur butonu
   sadece 0 satirda cikiyor, silme ise tek dekont varsa reddediliyor.
-  Ilk sozlesmeler Agustos 2027'de bu duvara carpacak. Cozum onerisi:
+  Ilk sozlesmeler Agustos 2027'de bu duvara carpacak (27 Eylul
+  taramasi: planlarin son donemleri 2027-03'ten itibaren doluyor, bkz.
+  Faz 3.8 CANLI VERI DUZELTMESI). Cozum onerisi:
   create_payment_schedule yalnizca eksik donemler icin satir eklesin
+- Odeme plani modali odeme gunu varsayilanini baslangic_tarihi'nin
+  gununden aliyor. Formdaki odeme_gunu alani asil deger ve farkli
+  olabiliyor (canli ornek: baslangic 05.06.2026, odeme gunu 15).
+  Build 5: gun once form_data.odeme_gunu'dan, yoksa baslangic
+  gununden turetilsin. Sadece varsayilani etkiliyor, modalda elle
+  degistirilebiliyor.
 - Tek korumali satir sozlesmeyi kilitliyor, cikis yolu sadece SQL
 - Ayni isimde ikinci kisi kaydi olusturulabiliyor, picker ayirt etmiyor
 - Uygulamada gunluk kullanim dongusu yok. Hatirlatma bildirimleri
@@ -608,8 +616,14 @@ CTE ifadesiyle (DELETE ... RETURNING -> INSERT ... SELECT). Boylece silme
 eslesmezse ekleme de olmuyor, 13. satir riski yok. UNIQUE(contract_id, donem)
 kisiti yuzunden tum satirlari tek seferde +1 ay kaydirmak mumkun degildi.
 Sonuc dogrulandi: 1 depozito (odendi, dekontlu) + 12 kira, 2026-09'dan
-2027-08'e, vadeler ayin 15'i. Zeray Mahal sozlesmelerinde plan
-olusturulmadigi icin baska sozlesme etkilenmedi.
+2027-08'e, vadeler ayin 15'i. Sonradan yapilan tarama (27 Eylul 2026): 22
+sozlesmede odeme plani var, 'baska plan yok' varsayimi yanlisti. Ay veya
+vade gunu sozlesmeyle tutmayanlar test1 demo hesabinda uretilmis
+sozlesmeler (ornek: NUMAN CAKIM); Eylul 2026'dan baslayan 10 plan
+bilincli ileriye donuk takip, hicbirinde odeme veya dekont yok. Kullanici
+teyidi: gercek org'da duzeltilmesi gereken sozlesme yok. Planlarin son
+donemleri 2027-03 ile 2027-08 arasinda (test1 dahil) — 'plan uzatilamiyor'
+duvari Agustos'tan once baslayabilir.
 
 ### Build 4 gonderim durumu — 11 Eylul 2026
 
