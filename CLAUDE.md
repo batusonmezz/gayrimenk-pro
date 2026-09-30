@@ -219,11 +219,13 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 
 **Siradaki isler**
 1. Apple'dan cevap bekleniyor
-2. Kapali testte 14 gunu doldurmak, testerlari dondurmek, geri bildirimleri
-   bir dosyada toplamak (uretim erisimi basvurusunda soruluyor)
+2. ✅ TAMAMLANDI — 14 gun doldu, uretim erisimi basvurusu 30 Eylul'de
+   gonderildi (bkz. Build 4 gonderim durumu)
 3. E-posta onayini acmak + Supabase Site URL duzeltmesi (production yol
    haritasinin son maddesi, inceleme bitmeden YAPILMAYACAK)
-4. Play Console'da paket adi kaydi kontrolu (son tarih 30 Eylul 2026)
+4. ✅ TAMAMLANDI — Play Console > Android gelistirici dogrulamasinda
+   com.batusonmez.gayrimenkpro "Kayitli" (18 Mayis 2026'da otomatik
+   kaydedilmis, son tarih sorun olmadi)
 5. Domain: gayrimenk.com (ertelendi)
 
 **Bilinen acik borclar**
@@ -256,6 +258,14 @@ Multi-tenant SaaS mimarisi (Supabase + Claude API).
 - anthropic-proxy stub'i ve clear_must_change_password NO-OP'u
   KALDIRILMAYACAK: App Store'daki build 3 ikisini de cagiriyor. Build 4
   yayina girip kullanicilar guncelledikten sonra silinebilir
+- Play'in "bir sonraki yayininiz icin" iki onerisi (build 5): Android
+  15'te kullanimdan kalkan uctan uca ekran API'leri (buyuk ihtimalle bir
+  kutuphaneden geliyor) ve Android 16'nin buyuk ekranlarda
+  orientation:'portrait' kilidini yok saymasi.
+- Acik kayit Y4/O1'de kapatildi; Play'den indiren yeni bir emlakci su an
+  kendi hesabini acamiyor (14 testerin hesabini gelistirici acmisti).
+  Uretim sonrasi emlakci onboarding yolu KARARI ACIK: elle hesap acma mi,
+  magaza metnine iletisim satiri mi, yoksa kontrollu bir kayit akisi mi.
 
 ### Faz 3.7 — Guvenlik denetimi + iOS canli yayin — 26 Agustos 2026
 
@@ -379,9 +389,12 @@ inmiyor.
    versionCode 18
 
 **BEKLEYEN DIGER ISLER**
-- Play kapali testi: 14 tester, 14 gun, testerlari dondurmeye devam
-- Play magaza aciklamasindan AI bolumu: bkz. Build 4 gonderim durumu > ACIK — SIRADAKI ADIMLAR
-- Play Console paket adi kaydi (son tarih 30 Eylul 2026)
+- ✅ TAMAMLANDI — Play kapali testi sarti doldu (14 gun + 12+ tester),
+  uretim erisimi basvurusu 30 Eylul'de gonderildi (bkz. Build 4 gonderim durumu)
+- ✅ TAMAMLANDI (30 Eylul) — Play magaza aciklamasindan AI bolumu
+  cikarildi (bkz. Build 4 gonderim durumu > ACIK — SIRADAKI ADIMLAR)
+- ✅ TAMAMLANDI — Play Console paket adi kaydi (com.batusonmez.gayrimenkpro
+  "Kayitli", 18 Mayis 2026'da otomatik kaydedilmis)
 - Site tanitim sayfasi (Claude Design, Next.js 16 + Tailwind v4)
 - gayrimenk.com projesi: C:\Users\Lenovo\Desktop\Claude\Gayrimenk.com
 
@@ -636,28 +649,36 @@ duvari Agustos'tan once baslayabilir.
 - eas.json'da appVersionSource "local": EAS surumu app.config.js'ten
   aliyor, otomatik artirmiyor. Cikan surum 7.6.0 / versionCode 18 /
   buildNumber 4.
-- ANDROID: AAB Play Console kapali test (alpha) kanalina yuklendi,
-  rollout baslatildi, durum "Incelemede". Onaylanip "Yayinda"ya
-  gecince testerlar 18'i guncelleme olarak gorecek.
+- ANDROID: versionCode 18 alpha (kapali test) kanalinda ONAYLANDI, 9
+  Eylul'den beri yayinda. Testerlar 18'i guncelleme olarak gordu.
 - iOS: eas submit ile App Store Connect'e yuklendi. DIKKAT — yukleme
   gonderim DEGIL. Surum olusturma ve incelemeye gonderme adimlari
   asagida (bkz. Apple yayin adimlari).
 - AI_MADDE_DUZENLEME = false oldugu icin build 4'te hicbir AI yuzeyi yok.
+- URETIM ERISIMI BASVURUSU 30 Eylul 2026'da gonderildi. Kontrol
+  panelinde uc sart da tamamdi (kapali test surumu yayinda, 12+ tester
+  kayitli, 14 gun doldu). Google'a gore inceleme genelde 7 gun veya daha
+  kisa. Acik test uretim erisimine kadar KILITLI (Google: "Open testing
+  becomes available after you gain production access").
 
 **ACIK — SIRADAKI ADIMLAR**
-- Play magaza aciklamasindan AI bolumu cikarilmadi. Uygulama artik
-  Anthropic'e cagri yapmiyor; beyan-ozellik uyusmazligi hem yayin
-  reddi hem uretim erisimi basvurusunda risk. Gizlilik
-  politikasindaki Anthropic bolumu KALACAK.
+- ✅ TAMAMLANDI (30 Eylul) — Play magaza aciklamasindan AI bolumu
+  cikarildi. Kodla celisen uc iddia daha cikarildi: "internet zayifken
+  erisim" (O3'te yerel yedek kaldirildigi icin artik yanlis), "e-posta
+  ile davet" (invite-user e-posta gondermiyor, sifre emlakcinin
+  ekraninda cikiyor), ve kefilin listeden secilebilmesi (persons'a
+  sadece kiraci ve mal sahibi yaziliyor). Kisa aciklamada zaten AI yoktu.
 - App Store aciklamasi, anahtar kelimeler ve App Review Notes
-  AI/yapay zeka acisindan kontrol edilmedi. Build 3'ten tasinan
-  notlar artik var olmayan bir ozellikten bahsediyor olabilir.
+  AI/yapay zeka acisindan HALA kontrol edilmedi. Ayni dort duzeltme
+  gerekiyor (AI, cevrimdisi erisim, e-posta daveti, kefil) — Play icin
+  hazirlanan temiz metin buraya da kullanilabilir.
 - iOS 7.6.0 surumu App Store Connect'te olusturulup incelemeye
   GONDERILMEDI. Binary yuklu, surum acilmadi. Adimlar: "Apple yayin
   adimlari" bolumu.
-- Opted-in tester sayisi ve 14 gunluk sayacin gunu BILINMIYOR.
-  Uretim erisimi basvuru tarihi buna bagli; paket adi kaydi son
-  tarih 30 Eylul 2026.
+- ✅ COZULDU — tester sayisi/14 gun sarti doldu, uretim erisimi
+  basvurusu yapildi (yukarida). Paket adi kaydi da TAMAMLANDI (Play
+  Console > Android gelistirici dogrulamasi, com.batusonmez.gayrimenkpro
+  "Kayitli").
 
 ### Apple yayin adimlari (her surumde tekrarlanan)
 
